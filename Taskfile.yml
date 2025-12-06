@@ -141,7 +141,11 @@ tasks:
     desc: Remove local Supabase Docker volumes (complete cleanup)
     cmds:
       - supabase stop --no-backup || true
-      - docker volume ls -q | grep supabase | xargs docker volume rm || true
+      - |
+        volumes=$(docker volume ls -q | grep supabase || true)
+        if [ -n "$volumes" ]; then
+          echo "$volumes" | xargs docker volume rm
+        fi
       - echo "✅ Cleaned all Supabase data"
 
   setup:
@@ -214,6 +218,8 @@ tasks:
         VITE_SUPABASE_URL=http://localhost:54321
         
         # Local Supabase Anonymous Key (default for local development)
+        # WARNING: This is the standard Supabase local development key.
+        # NEVER use this in production! It's only safe for local development.
         VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
         EOF
           echo "✅ Created .env.local"
