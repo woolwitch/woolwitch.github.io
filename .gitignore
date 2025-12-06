@@ -23,3 +23,7 @@ dist-ssr
 .env
 
 .task
+
+# Supabase local files
+supabase/.branches
+supabase/.temp

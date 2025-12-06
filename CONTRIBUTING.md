@@ -38,21 +38,25 @@ Before you begin, ensure you have:
    git remote add upstream https://github.com/dataGriff/wool-witch.git
    ```
 
-4. **Complete setup (one command does everything):**
+4. **One-command setup:**
 
    ```bash
    task setup
    ```
 
-   This installs dependencies, sets up environment files, and checks prerequisites.
+   This command:
+   - ✅ Installs all dependencies
+   - ✅ Sets up environment files  
+   - ✅ Checks prerequisites
+   - ✅ Prepares the database
 
-5. **Start development:**
+5. **Start developing:**
 
    ```bash
    task dev
    ```
 
-   This starts the local Supabase database and development server.
+   This starts both the database and development server.
 
 **First run takes 2-5 minutes** (downloads Docker images). Subsequent runs take ~30 seconds.
 
@@ -63,7 +67,20 @@ Once running, you'll have access to:
 - 🌐 **Web App**: <http://localhost:5173>
 - 📊 **Database Admin (Supabase Studio)**: <http://localhost:54323>
 - 🔌 **API**: <http://localhost:54321>
-- 📧 **Email Testing (Inbucket)**: <http://localhost:54324>
+- 📧 **Email Testing**: <http://localhost:54324>
+
+### Testing Authentication Features
+
+The app includes authentication with role-based access:
+
+1. **Sign up** a new user through the app UI
+2. **Promote to admin** (to test admin features):
+   - Open Supabase Studio: <http://localhost:54323>
+   - Go to Table Editor → `user_roles`
+   - Change your user's role from 'user' to 'admin'
+   - Sign out and back in to refresh permissions
+
+See [docs/AUTHENTICATION_SETUP.md](docs/AUTHENTICATION_SETUP.md) for detailed authentication testing.
 
 ## 🔄 Development Process
 
@@ -204,19 +221,21 @@ All commands use [Task](https://taskfile.dev/). If you don't have Task installed
 ### Essential Commands
 
 ```bash
-task setup      # First-time setup
-task dev        # Start development
-task test       # Run quality checks
+task setup      # First-time setup (run once)
+task dev        # Start development environment
+task dev-only   # Start dev server only (if DB already running)
+task test       # Run quality checks (lint + typecheck)
 task build      # Build for production
 ```
 
 ### Database Commands
 
 ```bash
-task db:start   # Start database
+task db:start   # Start database only
 task db:stop    # Stop database
-task db:reset   # Reset database
-task db:status  # Check status
+task db:reset   # Reset database (fresh start)
+task db:status  # Check database status
+task db:migrate # Apply pending migrations
 ```
 
 ### Quality Commands

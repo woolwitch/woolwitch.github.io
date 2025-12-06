@@ -6,9 +6,11 @@ A modern e-commerce web application for handmade crochet and craft goods, built 
 
 - 🛍️ **Product Catalog** - Browse beautiful handmade crochet items
 - 🛒 **Shopping Cart** - Add items and manage your cart
-- 💳 **Checkout Process** - Secure payment processing
-- 📱 **Responsive Design** - Works perfectly on all devices
-- ⚡ **Real-time Updates** - Powered by Supabase
+- 💳 **Secure Checkout** - Safe payment processing
+- 👤 **User Accounts** - Sign up and manage your profile
+- 🔐 **Admin Dashboard** - Product management for store owners
+- 📱 **Mobile Friendly** - Works perfectly on all devices
+- ⚡ **Fast & Reliable** - Built with modern technology
 
 ## 🚀 Quick Start
 
@@ -16,30 +18,32 @@ A modern e-commerce web application for handmade crochet and craft goods, built 
 
 Visit the live application: [Wool Witch Shop](https://your-domain.com) _(Coming Soon)_
 
-### For Developers
+### For Contributors
 
-Get up and running in minutes:
+Want to contribute? Get up and running in minutes:
 
 ```bash
 # Clone the repository
-git clone https://github.com/dataGrif/wool-witch.git
+git clone https://github.com/dataGriff/wool-witch.git
 cd wool-witch
 
-# Complete setup (installs dependencies, sets up local database)
+# One-command setup
 task setup
 
-# Start development (local database + dev server)
+# Start developing
 task dev
 ```
 
-That's it! The app will be running at <http://localhost:5173>
+That's it! The app runs at <http://localhost:5173> with a full local database.
 
 **What you get:**
 
-- ✅ Local Supabase database running in Docker
-- ✅ Hot-reload development server
-- ✅ Database admin interface at <http://localhost:54323>
-- ✅ No cloud account or setup required
+- Local Supabase database in Docker
+- Hot-reload development server
+- Database admin interface
+- No cloud setup required
+
+👉 **See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete developer guide**
 
 ## 🛠️ Tech Stack
 
@@ -52,22 +56,41 @@ That's it! The app will be running at <http://localhost:5173>
 
 ## 📖 Documentation
 
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
-- **[API Documentation](docs/api.md)** - Backend API reference _(Coming Soon)_
-- **[Deployment Guide](docs/deployment.md)** - How to deploy to production _(Coming Soon)_
+### User Guides
+
+- **Shopping Guide** - How to browse and purchase items _(Coming Soon)_
+- **Account Management** - Managing your profile and orders _(Coming Soon)_
+
+### Developer Guides
+
+- **[Contributing Guide](CONTRIBUTING.md)** - Complete development setup
+- **[Authentication Setup](docs/AUTHENTICATION_SETUP.md)** - Testing auth features
+- **[Product Image Management](docs/PRODUCT_IMAGE_MANAGEMENT.md)** - Managing product images and Supabase storage
+- **[Database Schema](docs/)** - Database structure and migrations
+- **Deployment Guide** - Production deployment _(Coming Soon)_
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help makes this project better.
 
-**Quick contribution steps:**
+**Quick start for contributors:**
 
 1. Fork the repository
-2. Create a feature branch
-3. Run `task dev` to start development
+2. Run `task setup` for one-command setup
+3. Run `task dev` to start developing
 4. Make your changes
 5. Run `task test` to ensure quality
 6. Submit a pull request
+
+**👉 Read the [Contributing Guide](CONTRIBUTING.md) for detailed instructions**
+
+### Development Features
+
+- Hot reload for instant feedback
+- Automated testing and linting
+- Dockerized local database
+- Database admin interface
+- One-command setup and deployment
 
 ## 📄 License
 
