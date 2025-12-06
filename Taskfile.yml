@@ -66,15 +66,17 @@ tasks:
   clean:
     desc: Remove build artifacts and dependencies
     cmds:
-      - rm -rf dist
-      - rm -rf node_modules
-      - rm -rf .vite
+      - rm -rf dist || true
+      - rm -rf node_modules || true
+      - rm -rf .vite || true
+      - echo "✅ Cleaned build artifacts and dependencies"
 
   clean:dist:
     desc: Remove only build artifacts (keeps node_modules)
     cmds:
-      - rm -rf dist
-      - rm -rf .vite
+      - rm -rf dist || true
+      - rm -rf .vite || true
+      - echo "✅ Cleaned build artifacts"
 
   setup:
     desc: Complete first-time project setup
@@ -88,13 +90,16 @@ tasks:
     cmds:
       - |
         if [ ! -f .env ]; then
-          echo "⚠️  .env file not found. Creating .env.example..."
-          cat > .env.example <<EOF
+          if [ ! -f .env.example ]; then
+            echo "⚠️  .env and .env.example not found. Creating .env.example..."
+            cat > .env.example <<EOF
         # Supabase Configuration
         # Get these values from your Supabase project settings
         VITE_SUPABASE_URL=your_supabase_url_here
         VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
         EOF
+          fi
+          echo "⚠️  .env file not found."
           echo "📝 Please copy .env.example to .env and fill in your Supabase credentials"
           echo "   You can get these from: https://app.supabase.com/project/_/settings/api"
           exit 1
