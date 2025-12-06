@@ -11,26 +11,36 @@ tasks:
       - task --list
 
   # Essential Development Tasks
+  dev-only:
+    desc: Start dev server only (assumes database is running)
+    deps: [install]
+    cmds:
+      - echo "Starting dev server..."
+      - npm run dev
+
   setup:
-    desc: Complete first-time project setup
+    desc: Complete first-time project setup (dependencies + env + database)
     cmds:
       - task: check-deps
-      - task: install-supabase
       - task: install
       - task: setup-env
       - echo ""
       - echo "Setup complete!"
       - echo ""
-      - echo "Next step - task dev"
+      - echo "Next step: task dev"
+      - echo "See CONTRIBUTING.md for development guide"
       - echo ""
 
   dev:
-    desc: Start development (local database + dev server)
+    desc: Start development environment (database + dev server)
     deps: [install, db:start]
     cmds:
       - echo "Starting development server..."
-      - echo "Supabase Studio - http://localhost:54323"
-      - echo "API - http://localhost:54321"
+      - echo ""
+      - echo "Supabase Studio: http://localhost:54323"
+      - echo "API: http://localhost:54321"
+      - echo "App will start at: http://localhost:5173"
+      - echo ""
       - npm run dev
 
   test:
@@ -79,6 +89,12 @@ tasks:
     cmds:
       - supabase status
 
+  db:migrate:
+    desc: Apply pending database migrations
+    cmds:
+      - echo "Applying database migrations..."
+      - supabase db push
+
   # Code Quality
   lint:
     desc: Run ESLint
@@ -109,20 +125,7 @@ tasks:
     generates:
       - node_modules/**/*
 
-  install-supabase:
-    desc: Install Supabase CLI
-    cmds:
-      - |
-        if ! command -v supabase &> /dev/null; then
-          echo "Installing Supabase CLI..."
-          cd /tmp
-          wget -qO- https://github.com/supabase/cli/releases/download/v2.65.5/supabase_linux_amd64.tar.gz | tar -xz
-          sudo mv supabase /usr/local/bin/supabase
-          cd -
-          echo "Supabase CLI installed successfully!"
-        else
-          echo "Supabase CLI already installed: $(supabase --version)"
-        fi
+
 
   clean:
     desc: Clean build artifacts
@@ -140,10 +143,11 @@ tasks:
 
   # Internal Tasks
   check-deps:
-    desc: Check required tools
+    desc: Check required development tools
     cmds:
       - |
         echo "Checking dependencies..."
+        echo ""
         
         # Check Node.js
         if ! command -v node &> /dev/null; then
@@ -161,19 +165,22 @@ tasks:
         
         # Check Docker
         if ! command -v docker &> /dev/null; then
-          echo "Docker not found (required for database)"
-          echo "Install: https://docs.docker.com/get-docker/"
+          echo "WARNING: Docker not found (required for local database)"
+          echo "   Install: https://docs.docker.com/get-docker/"
         else
-          echo "Docker $(docker --version | cut -d' ' -f3)"
+          echo "Docker $(docker --version | cut -d' ' -f3 | tr -d ',')"
         fi
         
         # Check Supabase CLI
         if ! command -v supabase &> /dev/null; then
-          echo "Supabase CLI not found (required for database)"
-          echo "Install: https://supabase.com/docs/guides/cli/getting-started#installing-the-supabase-cli"
+          echo "WARNING: Supabase CLI not found (required for database)"
+          echo "   Install: https://supabase.com/docs/guides/cli/getting-started"
         else
           echo "Supabase CLI $(supabase --version)"
         fi
+        
+        echo ""
+        echo "Dependency check complete"
 
   setup-env:
     desc: Create environment files
