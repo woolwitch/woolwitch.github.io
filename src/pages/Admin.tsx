@@ -81,13 +81,43 @@ export function Admin() {
 
   const handleSave = async () => {
     try {
+      // Validate inputs
+      if (!formData.name.trim()) {
+        alert('Product name is required');
+        return;
+      }
+      if (!formData.category.trim()) {
+        alert('Product category is required');
+        return;
+      }
+      if (!formData.description.trim()) {
+        alert('Product description is required');
+        return;
+      }
+      if (!formData.image_url.trim()) {
+        alert('Product image URL is required');
+        return;
+      }
+
+      const price = parseFloat(formData.price);
+      const stockQuantity = parseInt(formData.stock_quantity);
+
+      if (isNaN(price) || price < 0) {
+        alert('Please enter a valid price (must be 0 or greater)');
+        return;
+      }
+      if (isNaN(stockQuantity) || stockQuantity < 0) {
+        alert('Please enter a valid stock quantity (must be 0 or greater)');
+        return;
+      }
+
       const productData = {
-        name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        image_url: formData.image_url,
-        category: formData.category,
-        stock_quantity: parseInt(formData.stock_quantity),
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        price: price,
+        image_url: formData.image_url.trim(),
+        category: formData.category.trim(),
+        stock_quantity: stockQuantity,
         is_available: formData.is_available,
       };
 

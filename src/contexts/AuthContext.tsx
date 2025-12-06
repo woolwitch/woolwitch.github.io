@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import type { UserRole } from '../types/database';
 
 interface AuthContextType {
   user: User | null;
@@ -56,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single<UserRole>();
+        .single();
 
       if (error) throw error;
       setIsAdmin(data?.role === 'admin');
