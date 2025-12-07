@@ -63,6 +63,19 @@ fi
 echo "📦 Installing npm dependencies..."
 npm install
 
+# Initialize Git LFS if not already done
+echo "🔗 Setting up Git LFS..."
+if ! command -v git-lfs &> /dev/null; then
+    # Install Git LFS if not present
+    echo "Installing Git LFS..."
+    wget -q https://github.com/git-lfs/git-lfs/releases/download/v3.4.1/git-lfs-linux-amd64-v3.4.1.tar.gz
+    tar -xzf git-lfs-linux-amd64-v3.4.1.tar.gz
+    sudo cp git-lfs-3.4.1/git-lfs /usr/local/bin/
+    rm -rf git-lfs-3.4.1/ git-lfs-linux-amd64-v3.4.1.tar.gz
+fi
+
+git lfs install --force || true
+
 echo "🎉 Devcontainer setup complete!"
 echo ""
 echo "Next steps:"
