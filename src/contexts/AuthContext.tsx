@@ -51,16 +51,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function checkAdminStatus(userId: string) {
     try {
+      console.log('🔍 Checking admin status for user:', userId);
+      
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .single();
 
-      if (error) throw error;
-      setIsAdmin(data?.role === 'admin');
+      console.log('📋 Admin check result:', { data, error });
+
+      if (error) {
+        console.error('❌ Error from database:', error);
+        throw error;
+      }
+      
+      const isAdminUser = data?.role === 'admin';
+      console.log(`👤 User role: ${data?.role}, Is Admin: ${isAdminUser}`);
+      setIsAdmin(isAdminUser);
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      console.error('💥 Error checking admin status:', error);
+      console.error('🔧 Error details:', JSON.stringify(error, null, 2));
       setIsAdmin(false);
     } finally {
       setLoading(false);
