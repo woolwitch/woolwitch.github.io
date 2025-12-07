@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingBag, User, LogOut, UserCog } from 'lucide-react';
+import { ShoppingBag, User, LogOut, UserCog, Menu, X } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthModal } from './AuthModal';
@@ -14,14 +14,21 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
   const { itemCount } = useCart();
   const { user, isAdmin, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
       await signOut();
       onNavigate('shop');
+      setMobileMenuOpen(false);
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const handleNavigation = (page: 'shop' | 'cart' | 'checkout' | 'admin') => {
+    onNavigate(page);
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -29,7 +36,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => onNavigate('shop')}
+            onClick={() => handleNavigation('shop')}
             className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
           >
             <img 
@@ -47,7 +54,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
 
           <nav className="hidden md:flex items-center space-x-8">
             <button
-              onClick={() => onNavigate('shop')}
+              onClick={() => handleNavigation('shop')}
               className={`font-medium transition-colors ${
                 currentPage === 'shop'
                   ? 'text-rose-600'
@@ -58,7 +65,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
             </button>
             {isAdmin && (
               <button
-                onClick={() => onNavigate('admin')}
+                onClick={() => handleNavigation('admin')}
                 className={`font-medium transition-colors ${
                   currentPage === 'admin'
                     ? 'text-rose-600'
@@ -103,7 +110,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
               </button>
             )}
             <button
-              onClick={() => onNavigate('cart')}
+              onClick={() => handleNavigation('cart')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all ${
                 currentPage === 'cart'
                   ? 'bg-rose-600 text-white'
@@ -113,9 +120,64 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
               <ShoppingBag className="w-5 h-5" />
               <span className="font-medium">{itemCount}</span>
             </button>
+            
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6 text-gray-700" />
+              ) : (
+                <Menu className="w-6 h-6 text-gray-700" />
+              )}
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-gray-200 bg-white">
+          <nav className="px-4 py-4 space-y-3">
+            <button
+              onClick={() => handleNavigation('shop')}
+              className={`block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                currentPage === 'shop'
+                  ? 'bg-rose-50 text-rose-600'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Shop
+            </button>
+            {isAdmin && (
+              <button
+                onClick={() => handleNavigation('admin')}
+                className={`block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                  currentPage === 'admin'
+                    ? 'bg-rose-50 text-rose-600'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Admin
+              </button>
+            )}
+            <a
+              href="#"
+              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+            >
+              About
+            </a>
+            <a
+              href="#"
+              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+            >
+              Contact
+            </a>
+          </nav>
+        </div>
+      )}
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </header>
   );
