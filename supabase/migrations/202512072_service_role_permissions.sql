@@ -1,33 +1,37 @@
 /*
-  # Grant Service Role Access to Woolwitch Schema
+  # Service Role Permissions for Woolwitch Schema
 
   ## Overview
   Grants the service_role (used by admin scripts and internal operations)
-  proper access to the woolwitch schema and all its objects.
+  comprehensive access to the woolwitch schema and all its objects.
 
   ## Permissions Granted
   - USAGE on woolwitch schema
-  - ALL PRIVILEGES on all tables in woolwitch schema
-  - ALL PRIVILEGES on all sequences in woolwitch schema
-  - ALL PRIVILEGES on all functions in woolwitch schema
-  - Grant for future objects created in the schema
+  - ALL PRIVILEGES on all tables, sequences, and functions
+  - DEFAULT PRIVILEGES for future objects
+  - Postgres superuser access for migrations
 
-  ## Security Note
-  The service_role is a superuser role used for administrative operations
-  and bypasses RLS policies. This is necessary for admin scripts and
-  backend operations that need to manage data programmatically.
+  ## Security Context
+  The service_role is a superuser role used for:
+  - Administrative scripts (like upload-products.mjs)
+  - Backend operations that bypass RLS
+  - Database migrations and maintenance
+  - Internal system operations
+
+  This role is separate from user-facing authentication and should only be used
+  by trusted backend services and admin tooling.
 */
+
+-- ========================================
+-- SERVICE ROLE PERMISSIONS
+-- ========================================
 
 -- Grant schema usage to service_role
 GRANT USAGE ON SCHEMA woolwitch TO service_role;
 
--- Grant all privileges on all existing tables
+-- Grant all privileges on existing objects
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA woolwitch TO service_role;
-
--- Grant all privileges on all existing sequences
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA woolwitch TO service_role;
-
--- Grant all privileges on all existing functions
 GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA woolwitch TO service_role;
 
 -- Grant privileges on future objects (when they are created)
@@ -40,7 +44,11 @@ GRANT ALL PRIVILEGES ON SEQUENCES TO service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA woolwitch 
 GRANT ALL PRIVILEGES ON FUNCTIONS TO service_role;
 
--- Ensure postgres superuser also has access (for migrations)
+-- ========================================
+-- POSTGRES SUPERUSER PERMISSIONS
+-- ========================================
+
+-- Ensure postgres superuser has access for migrations and administration
 GRANT ALL PRIVILEGES ON SCHEMA woolwitch TO postgres;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA woolwitch TO postgres;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA woolwitch TO postgres;
