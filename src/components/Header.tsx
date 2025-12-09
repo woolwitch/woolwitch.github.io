@@ -6,8 +6,8 @@ import { AuthModal } from './AuthModal';
 import woolwitchLogo from '../assets/woolwitch.jpg';
 
 interface HeaderProps {
-  currentPage: 'shop' | 'cart' | 'checkout' | 'admin' | 'about' | 'contact';
-  onNavigate: (page: 'shop' | 'cart' | 'checkout' | 'admin' | 'about' | 'contact') => void;
+  currentPage: 'shop' | 'cart' | 'checkout' | 'admin' | 'about' | 'contact' | 'privacy-policy' | 'terms-of-service';
+  onNavigate: (page: 'shop' | 'cart' | 'checkout' | 'admin' | 'about' | 'contact' | 'privacy-policy' | 'terms-of-service') => void;
 }
 
 export function Header({ currentPage, onNavigate }: HeaderProps) {
@@ -26,7 +26,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
     }
   };
 
-  const handleNavigation = (page: 'shop' | 'cart' | 'checkout' | 'admin' | 'about' | 'contact') => {
+  const handleNavigation = (page: 'shop' | 'cart' | 'checkout' | 'admin' | 'about' | 'contact' | 'privacy-policy' | 'terms-of-service') => {
     onNavigate(page);
     setMobileMenuOpen(false);
   };
