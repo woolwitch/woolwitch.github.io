@@ -1,27 +1,52 @@
-# Documentation
+# Wool Witch Documentation
 
-This directory contains technical documentation for the Wool Witch project.
+Technical documentation for the Wool Witch e-commerce platform - a React/TypeScript application with Supabase backend.
 
-## Authentication & User Management
+## Quick Start
 
-- **[AUTHENTICATION_SETUP.md](AUTHENTICATION_SETUP.md)** - Complete guide for setting up and testing authentication features
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Technical overview of the authentication implementation
-- **[promote_user_to_admin.sql](promote_user_to_admin.sql)** - SQL scripts for user role management
+```bash
+# First-time setup
+task setup
 
-## Security & Database Schema
+# Daily development
+task dev
+```
 
-- **[WOOLWITCH_SCHEMA_SECURITY.md](WOOLWITCH_SCHEMA_SECURITY.md)** - Comprehensive guide to the woolwitch schema security implementation
-- **Database Schema** - See migration files in `supabase/migrations/`
-- **Row Level Security** - Policies documented in migration files
+For complete development setup, see [CONTRIBUTING.md](../CONTRIBUTING.md) in the project root.
 
-## Product Management
+## Core Guides
 
-- **[PRODUCT_IMAGE_MANAGEMENT.md](PRODUCT_IMAGE_MANAGEMENT.md)** - Guide for managing product images and uploads
+- **[AUTHENTICATION.md](AUTHENTICATION.md)** - Complete authentication setup including Google OAuth
+- **[DATABASE.md](DATABASE.md)** - Database schema, security, and product management
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - GitHub Pages deployment configuration
 
-## Development
+## Reference Files
 
-For development setup and contributing, see the main [CONTRIBUTING.md](../CONTRIBUTING.md) file in the project root.
+- **[promote_user_to_admin.sql](promote_user_to_admin.sql)** - SQL script for admin role assignment
+- **[WOOLWITCH_SCHEMA_SECURITY.md](WOOLWITCH_SCHEMA_SECURITY.md)** - Detailed schema security implementation
 
-## Deployment
+## Quick Reference
 
-Deployment documentation coming soon.
+### Development
+
+- **Frontend**: <http://localhost:5174>
+- **Supabase Studio**: <http://localhost:54323>
+- **API Endpoint**: <http://localhost:54321>
+
+### Key Commands
+
+```bash
+task setup        # Complete setup
+task dev          # Start development
+task test         # Run linting and typecheck
+task db:reset     # Reset database
+task upload-products  # Upload demo products
+```
+
+### Admin Setup
+
+1. Sign up user via UI
+2. Open Supabase Studio → `woolwitch.user_roles`
+3. Change role from 'user' to 'admin'
+4. Sign out and sign back in
+
