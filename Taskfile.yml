@@ -170,6 +170,36 @@ tasks:
       - task: typecheck
       - echo "All checks passed!"
 
+  test:e2e:
+    desc: Run end-to-end tests with Playwright
+    deps: [install]
+    cmds:
+      - npm run test:e2e
+
+  test:e2e:headless:
+    desc: Run end-to-end tests in headless mode
+    deps: [install]
+    cmds:
+      - npm run test:e2e:headless
+
+  test:e2e:ui:
+    desc: Run end-to-end tests with UI
+    deps: [install]
+    cmds:
+      - npm run test:e2e:ui
+
+  test:smoke:
+    desc: Run simple smoke test on localhost
+    deps: [install]
+    cmds:
+      - npm run test:smoke
+
+  test:smoke:prod:
+    desc: Run smoke test against production site
+    deps: [install]
+    cmds:
+      - npm run test:smoke:prod
+
   build:
     desc: Build for production
     deps: [install]

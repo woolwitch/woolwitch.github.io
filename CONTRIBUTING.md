@@ -230,18 +230,43 @@ task db:status
 
 ### Testing Your Changes
 
-1. **Test the application** thoroughly in the browser
-2. **Run quality checks:**
+#### 1. Smoke Tests (Site Health Check)
 
-   ```bash
-   task test  # linting + type checking
-   ```
+Verify the site is working with our simple smoke tests:
 
-3. **Test the build:**
+```bash
+# Test against production
+./bin/smoke-test.sh prod
 
-   ```bash
-   task build  # production build
-   ```
+# Test against localhost (auto-starts dev server)
+./bin/smoke-test.sh
+
+# Or use npm/task commands
+npm run test:smoke:prod    # Production
+npm run test:smoke         # Localhost  
+task test:smoke:prod       # Using Task runner
+task test:smoke            # Localhost
+```
+
+**What it tests**: Page loads, navigation works, no critical errors, responsive design
+
+**Requirements**: None - tests work with any version of the site
+
+#### 2. Quality Checks
+
+**Test the application** thoroughly in the browser, then run:
+
+```bash
+task test  # linting + type checking
+```
+
+#### 3. Production Build Test
+
+**Test the build:**
+
+```bash
+task build  # production build
+```
 
 ## 📝 Submitting Your Contribution
 
@@ -348,6 +373,14 @@ task db:migrate # Apply pending migrations
 task lint       # Run linter
 task lint:fix   # Auto-fix linting issues
 task typecheck  # Type checking
+task test       # Run all quality checks (lint + typecheck)
+
+# Smoke tests (end-to-end)
+task test:smoke         # Test localhost (auto-starts server)
+task test:smoke:prod    # Test production site
+task test:e2e          # Run all e2e tests
+task test:e2e:headless # Run e2e tests in headless mode
+task test:e2e:ui       # Run e2e tests with interactive UI
 ```
 
 ### Other Commands

@@ -14,6 +14,11 @@
     "test": "npm run lint && npm run typecheck",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headless": "playwright test --reporter=line",
+    "test:smoke": "playwright test tests/smoke.spec.ts",
+    "test:smoke:prod": "BASE_URL=https://woolwitch.github.io playwright test tests/smoke.spec.ts",
     "upload-products": "node bin/upload-products.mjs",
     "setup-local": "npm run upload-products"
   },
@@ -25,6 +30,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@playwright/test": "^1.57.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -33,6 +39,7 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
+    "playwright": "^1.57.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
