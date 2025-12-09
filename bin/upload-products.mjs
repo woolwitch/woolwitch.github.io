@@ -68,6 +68,7 @@ const PRODUCTS_WITH_IMAGES = [
     category: "Amigurumi",
     stock_quantity: 8,
     image_filename: "custom_mini_viking_figures.jpg",
+    delivery_carge: 2.99
   },
   {
     name: "Dragonscale Fingerless Gloves",
@@ -77,6 +78,7 @@ const PRODUCTS_WITH_IMAGES = [
     category: "Crochet",
     stock_quantity: 12,
     image_filename: "dragonscale_fingerless_gloves.jpg",
+    delivery_carge: 2.99
   },
   {
     name: "Magical Fingerless Mittens",
@@ -86,6 +88,7 @@ const PRODUCTS_WITH_IMAGES = [
     category: "Crochet",
     stock_quantity: 10,
     image_filename: "magical_fingerless_mittens.jpg",
+    delivery_carge: 2.99
   },
   {
     name: "Magical Slouch Beanie",
@@ -95,6 +98,7 @@ const PRODUCTS_WITH_IMAGES = [
     category: "Crochet",
     stock_quantity: 15,
     image_filename: "magical_slouch_beanie.jpg",
+    delivery_carge: 2.99
   },
   {
     name: "Rainbow Starburst Baby Blanket",
@@ -104,6 +108,7 @@ const PRODUCTS_WITH_IMAGES = [
     category: "Crochet",
     stock_quantity: 5,
     image_filename: "rainbow_starburst_baby_blanet.jpg",
+    delivery_carge: 2.99
   },
 ];
 
