@@ -306,36 +306,36 @@ export function Admin() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tab Navigation */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex space-x-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="flex space-x-2 sm:space-x-8">
             <button
               onClick={() => setActiveTab('products')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors ${
                 activeTab === 'products'
                   ? 'bg-rose-600 text-white'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
               <Package className="w-5 h-5" />
-              <span>Products</span>
+              <span className="text-sm sm:text-base">Products</span>
             </button>
             <button
               onClick={() => setActiveTab('orders')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors ${
                 activeTab === 'orders'
                   ? 'bg-rose-600 text-white'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
               <ShoppingCart className="w-5 h-5" />
-              <span>Orders</span>
+              <span className="text-sm sm:text-base">Orders</span>
             </button>
           </div>
           
           {activeTab === 'products' && (
             <button
               onClick={() => setIsAdding(true)}
-              className="flex items-center space-x-2 bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors"
+              className="flex items-center justify-center space-x-2 bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors"
             >
               <Plus className="w-5 h-5" />
               <span>Add Product</span>
@@ -349,7 +349,7 @@ export function Admin() {
             <h1 className="text-3xl font-bold text-gray-900 mb-8">Product Management</h1>
 
         {(isAdding || editingId) && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-8 max-h-[calc(100vh-12rem)] overflow-y-auto">
             <h2 className="text-xl font-semibold mb-4">
               {isAdding ? 'Add New Product' : 'Edit Product'}
             </h2>
@@ -391,7 +391,7 @@ export function Admin() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
                 />
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Charge (£)</label>
                 <input
                   type="number"
@@ -413,20 +413,18 @@ export function Admin() {
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-rose-500 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-                        onChange={handleImageChange}
-                        className="hidden"
-                      />
-                      <Upload className="w-5 h-5 mr-2 text-gray-400" />
-                      <span className="text-sm text-gray-600">
-                        {selectedImage ? selectedImage.name : 'Click to upload image (JPEG, PNG, WebP, or GIF, max 5MB)'}
-                      </span>
-                    </label>
-                  </div>
+                  <label className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-rose-500 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                    <Upload className="w-5 h-5 mr-2 text-gray-400 flex-shrink-0" />
+                    <span className="text-sm text-gray-600 truncate">
+                      {selectedImage ? selectedImage.name : 'Upload image (max 5MB)'}
+                    </span>
+                  </label>
                   {imagePreview && (
                     <div className="relative">
                       <img
@@ -450,11 +448,11 @@ export function Admin() {
                 </label>
               </div>
             </div>
-            <div className="flex justify-end space-x-3 mt-6">
+            <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6 pt-4 border-t border-gray-200 sticky bottom-0 bg-white -mx-4 sm:-mx-6 px-4 sm:px-6 pb-4">
               <button
                 onClick={handleCancel}
                 disabled={uploading}
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X className="w-5 h-5" />
                 <span>Cancel</span>
@@ -462,7 +460,7 @@ export function Admin() {
               <button
                 onClick={handleSave}
                 disabled={uploading}
-                className="flex items-center space-x-2 bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center space-x-2 bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="w-5 h-5" />
                 <span>{uploading ? 'Uploading...' : 'Save'}</span>
@@ -474,7 +472,7 @@ export function Admin() {
         {loading ? (
           <div className="text-center py-12">Loading products...</div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-white rounded-lg shadow-md overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -537,18 +535,22 @@ export function Admin() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(product)}
-                        className="text-rose-600 hover:text-rose-900 mr-4"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => handleEdit(product)}
+                          className="text-rose-600 hover:text-rose-900 p-1"
+                          aria-label="Edit product"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(product.id)}
+                          className="text-red-600 hover:text-red-900 p-1"
+                          aria-label="Delete product"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
