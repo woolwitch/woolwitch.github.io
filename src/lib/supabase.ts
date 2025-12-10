@@ -8,5 +8,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase environment variables");
 }
 
-// Create the Supabase client
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// Create the Supabase client with woolwitch schema
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  db: { schema: 'woolwitch' }
+});
