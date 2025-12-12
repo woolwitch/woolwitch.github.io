@@ -1058,7 +1058,7 @@ export interface StripeDetails {
   payment_method_id?: string;
   last_four?: string;
   card_brand?: string;
-  client_secret?: string;
+  // Note: client_secret is intentionally excluded - should not be stored long-term
 }
 
 // Cart item interface (for order creation)

@@ -87,7 +87,7 @@ export function Checkout({ onNavigate }: CheckoutProps) {
         payment_method_id: paymentData.paymentMethodId,
         last_four: paymentData.last4,
         card_brand: paymentData.brand,
-        client_secret: paymentData.clientSecret,
+        // client_secret intentionally excluded - not stored for security
       };
 
       const orderData: CreateOrderData = {
