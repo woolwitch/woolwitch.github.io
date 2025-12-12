@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     # Allow manual triggering
   workflow_run:
-    workflows: ["Deploy to GitHub Pages"]
+    workflows: ["Deploy Application"]
     types:
       - completed
 
