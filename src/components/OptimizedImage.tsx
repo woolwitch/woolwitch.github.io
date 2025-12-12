@@ -34,6 +34,7 @@ export function OptimizedImage({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isInView, setIsInView] = useState(priority);
+  const [fixedQuality] = useState(() => networkOptimizer.getOptimalQuality()); // Fix quality on mount
   const imageRef = useRef<HTMLImageElement>(null);
 
   // Intersection Observer for lazy loading
@@ -71,10 +72,10 @@ export function OptimizedImage({
 
   // Generate optimized image URLs using storage service
   const getOptimizedSrc = (originalSrc: string, width?: number) => {
-    const quality = networkOptimizer.getOptimalQuality();
+    // Use fixed quality determined at component mount to prevent flicker
     return optimizedStorage.getOptimizedImageUrl(originalSrc, {
       width,
-      quality,
+      quality: fixedQuality,
       format: 'webp'
     });
   };

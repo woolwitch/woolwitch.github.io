@@ -299,27 +299,59 @@ export class ImagePreloader {
  */
 export class NetworkOptimizer {
   private connection = (navigator as any).connection;
+  private cachedQuality: number | null = null;
+  private lastQualityCheck = 0;
+  private readonly QUALITY_CACHE_DURATION = 30000; // 30 seconds
 
   /**
-   * Get optimal image quality based on connection
+   * Get optimal image quality based on connection (with stable caching)
    */
   getOptimalQuality(): number {
-    if (!this.connection) return 80;
+    const now = Date.now();
+    
+    // Use cached quality if it's still fresh (prevents flickering)
+    if (this.cachedQuality !== null && (now - this.lastQualityCheck) < this.QUALITY_CACHE_DURATION) {
+      return this.cachedQuality;
+    }
+    
+    // Default quality for unknown/unavailable connections
+    if (!this.connection) {
+      this.cachedQuality = 80;
+      this.lastQualityCheck = now;
+      return this.cachedQuality;
+    }
     
     const effectiveType = this.connection.effectiveType;
     
+    // Use more conservative quality settings to prevent visual artifacts
     switch (effectiveType) {
       case '4g':
-        return 85;
+        this.cachedQuality = 80; // Reduced from 85 for consistency
+        break;
       case '3g':
-        return 70;
+        this.cachedQuality = 75; // Increased from 70 to reduce quality gaps
+        break;
       case '2g':
-        return 50;
+        this.cachedQuality = 70; // Increased from 50 to maintain readability
+        break;
       case 'slow-2g':
-        return 40;
+        this.cachedQuality = 65; // Increased from 40 for better mobile experience
+        break;
       default:
-        return 80;
+        this.cachedQuality = 80;
+        break;
     }
+    
+    this.lastQualityCheck = now;
+    return this.cachedQuality;
+  }
+
+  /**
+   * Clear cached quality to force re-evaluation
+   */
+  clearQualityCache(): void {
+    this.cachedQuality = null;
+    this.lastQualityCheck = 0;
   }
 
   /**
