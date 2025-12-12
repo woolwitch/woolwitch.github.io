@@ -5,17 +5,30 @@ const cache = new Map();
 const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
 const LIST_TTL = 2 * 60 * 1000; // 2 minutes for product lists
 
-// Initialize Supabase client
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+// Initialize Supabase client (with error handling)
+let supabase = null;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase configuration in environment variables');
+function initializeSupabase() {
+  if (supabase) return supabase;
+  
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Missing Supabase configuration:', { 
+      hasUrl: !!supabaseUrl, 
+      hasKey: !!supabaseAnonKey,
+      env: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+    });
+    throw new Error('Missing Supabase configuration in environment variables');
+  }
+
+  supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    db: { schema: 'woolwitch' }
+  });
+  
+  return supabase;
 }
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  db: { schema: 'woolwitch' }
-});
 
 /**
  * Clean expired cache entries
@@ -71,6 +84,7 @@ async function getProductList(options = {}) {
   }
 
   try {
+    const supabase = initializeSupabase();
     let query = supabase
       .from('products')
       .select('id, name, price, image_url, category, stock_quantity, delivery_charge, is_available')
@@ -113,6 +127,7 @@ async function getCategories() {
   }
 
   try {
+    const supabase = initializeSupabase();
     const { data, error } = await supabase
       .from('products')
       .select('category')
@@ -167,6 +182,18 @@ exports.handler = async (event, context) => {
     let responseData;
 
     switch (action) {
+      case 'health': {
+        responseData = { 
+          status: 'ok', 
+          timestamp: Date.now(),
+          env: {
+            hasSupabaseUrl: !!(process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL),
+            hasSupabaseKey: !!(process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY)
+          }
+        };
+        break;
+      }
+      
       case 'products': {
         const category = searchParams.get('category') || undefined;
         const search = searchParams.get('search') || undefined;

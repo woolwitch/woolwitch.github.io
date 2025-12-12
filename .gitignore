@@ -30,3 +30,6 @@ supabase/.temp
 
 test-results/*
 playwright-report/*
+
+# Local Netlify folder
+.netlify
