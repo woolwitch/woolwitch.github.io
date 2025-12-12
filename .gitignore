@@ -28,5 +28,5 @@ dist-ssr
 supabase/.branches
 supabase/.temp
 
-
+test-results/*
 playwright-report/*
