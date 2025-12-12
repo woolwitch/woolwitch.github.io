@@ -62,9 +62,6 @@ export function Admin() {
 
       if (error) throw error;
       setProducts((data as any) || []);
-      
-      // Clear cache since admin might have updated data
-      dataService.clearCache();
     } catch (error) {
       // Keep minimal error logging for debugging
     } finally {
@@ -274,6 +271,9 @@ export function Admin() {
         if (error) throw error;
       }
 
+      // Clear cache immediately after product modification to ensure consistency
+      dataService.clearCache();
+
       await fetchAllProducts();
       handleCancel();
     } catch (error) {
@@ -291,6 +291,10 @@ export function Admin() {
         .eq('id', id);
 
       if (error) throw error;
+      
+      // Clear cache immediately after product deletion to ensure consistency
+      dataService.clearCache();
+      
       await fetchAllProducts();
     } catch (error) {
       alert('Error deleting product. Please try again.');
