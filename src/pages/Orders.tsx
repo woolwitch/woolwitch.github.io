@@ -7,14 +7,14 @@ import {
   formatOrderStatus, 
   getOrderStatusColor 
 } from '../lib/orderService';
-import type { Order } from '../types/database';
+import type { Order, OrderItem, OrderAddress } from '../types/database';
 
 export default function Orders() {
   const { isAuthenticated } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [orderItems, setOrderItems] = useState<Record<string, unknown[]>>({});
+  const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
   const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -178,7 +178,7 @@ export default function Orders() {
                         {order.full_name}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {formatOrderAddress(order.address as Record<string, unknown>)}
+                        {formatOrderAddress(order.address as unknown as OrderAddress)}
                       </p>
                     </div>
 
@@ -247,7 +247,7 @@ export default function Orders() {
                           </div>
                         ) : orderItems[order.id] && orderItems[order.id].length > 0 ? (
                           <div className="space-y-3">
-                            {orderItems[order.id].map((item: Record<string, unknown>) => (
+                            {orderItems[order.id].map((item: OrderItem) => (
                               <div key={item.id} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-0">
                                 <div className="flex-1">
                                   <h6 className="text-sm font-medium text-gray-900">

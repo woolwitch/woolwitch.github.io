@@ -30,3 +30,5 @@
 - [ ] Optimize page titles and meta descriptions
 - [ ] Add schema markup for products
 - [ ] Set up social media meta tags verification
+
+- # fix unknown types in schemas
