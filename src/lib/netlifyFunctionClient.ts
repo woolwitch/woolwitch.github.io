@@ -50,7 +50,7 @@ export class NetlifyFunctionClient {
       const params = new URLSearchParams({
         action: 'products',
         ...Object.fromEntries(
-          Object.entries(options).filter(([_, v]) => v !== undefined).map(([k, v]) => [k, String(v)])
+          Object.entries(options).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)])
         )
       });
 

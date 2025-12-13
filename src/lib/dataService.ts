@@ -36,11 +36,11 @@ interface CacheEntry<T> {
  * - Query optimization for different use cases
  */
 export class DataService {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private readonly DEFAULT_TTL = 30 * 60 * 1000; // 30 minutes for most data
   private readonly LIST_TTL = 15 * 60 * 1000; // 15 minutes for product lists
   private readonly CATEGORY_TTL = 60 * 60 * 1000; // 1 hour for categories (rarely change)
-  private pendingFetches = new Map<string, Promise<any>>(); // Dedupe concurrent requests
+  private pendingFetches = new Map<string, Promise<unknown>>(); // Dedupe concurrent requests
 
   /**
    * Clear expired cache entries from memory
@@ -63,7 +63,7 @@ export class DataService {
     // Check memory cache first
     const entry = this.cache.get(key);
     if (entry && Date.now() <= entry.timestamp + entry.ttl) {
-      return entry.data;
+      return entry.data as T;
     }
     
     // Check persistent cache
@@ -105,7 +105,7 @@ export class DataService {
     const age = Date.now() - entry.timestamp;
     // Only return if within stale grace period
     if (age <= entry.ttl + maxStaleAge) {
-      return entry.data;
+      return entry.data as T;
     }
     return null;
   }
@@ -142,7 +142,7 @@ export class DataService {
     // Deduplicate concurrent requests for the same data
     const pendingKey = `pending_${cacheKey}`;
     if (this.pendingFetches.has(pendingKey)) {
-      return this.pendingFetches.get(pendingKey)!;
+      return this.pendingFetches.get(pendingKey)! as Promise<ProductListFields[]>;
     }
 
     const fetchPromise = this.fetchProductListFromSource(options, cacheKey);
@@ -320,7 +320,7 @@ export class DataService {
     // Deduplicate concurrent requests
     const pendingKey = `pending_${cacheKey}`;
     if (this.pendingFetches.has(pendingKey)) {
-      return this.pendingFetches.get(pendingKey)!;
+      return this.pendingFetches.get(pendingKey)! as Promise<string[]>;
     }
 
     const fetchPromise = (async () => {

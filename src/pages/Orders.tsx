@@ -14,7 +14,7 @@ export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [orderItems, setOrderItems] = useState<Record<string, any[]>>({});
+  const [orderItems, setOrderItems] = useState<Record<string, unknown[]>>({});
   const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -178,7 +178,7 @@ export default function Orders() {
                         {order.full_name}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {formatOrderAddress(order.address as any)}
+                        {formatOrderAddress(order.address as Record<string, unknown>)}
                       </p>
                     </div>
 
@@ -247,7 +247,7 @@ export default function Orders() {
                           </div>
                         ) : orderItems[order.id] && orderItems[order.id].length > 0 ? (
                           <div className="space-y-3">
-                            {orderItems[order.id].map((item: any) => (
+                            {orderItems[order.id].map((item: Record<string, unknown>) => (
                               <div key={item.id} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-0">
                                 <div className="flex-1">
                                   <h6 className="text-sm font-medium text-gray-900">

@@ -99,7 +99,7 @@ export class PersistentCache {
           const stored = localStorage.getItem(key);
           if (!stored) continue;
           
-          const item: CacheItem<any> = JSON.parse(stored);
+          const item: CacheItem<unknown> = JSON.parse(stored);
           
           // Remove if expired
           if (now > item.timestamp + item.ttl) {
@@ -228,7 +228,7 @@ export class ImagePreloader {
   /**
    * Preload images for visible products
    */
-  preloadProductImages(products: any[]): void {
+  preloadProductImages(products: { image_url?: string }[]): void {
     const imageUrls = products
       .filter(product => product.image_url)
       .map(product => product.image_url);
@@ -298,7 +298,7 @@ export class ImagePreloader {
  * Network-aware loading strategy
  */
 export class NetworkOptimizer {
-  private connection = (navigator as any).connection;
+  private connection = (navigator as unknown as { connection?: unknown }).connection;
   private cachedQuality: number | null = null;
   private lastQualityCheck = 0;
   private readonly QUALITY_CACHE_DURATION = 30000; // 30 seconds

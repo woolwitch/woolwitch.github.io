@@ -5,11 +5,17 @@
  * for the Wool Witch checkout process.
  */
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { getPayPalConfig, isPayPalConfigured, PayPalErrors } from '../lib/paypalConfig';
 import { calculateSubtotal, calculateDeliveryTotal } from '../lib/orderService';
 import type { CartItem, OrderAddress, PayPalDetails } from '../types/database';
-import type { PayPalNamespace, PayPalCaptureResult } from '../vite-env.d.ts';
+import type { 
+  PayPalNamespace, 
+  PayPalCaptureResult, 
+  PayPalActions, 
+  PayPalOrderData,
+  PayPalApprovalData 
+} from '../vite-env.d.ts';
 
 interface PayPalButtonProps {
   // Order data
@@ -55,47 +61,63 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
   style = {}
 }) => {
   const paypalRef = useRef<HTMLDivElement>(null);
-  const configRef = useRef<any>(null);
+  const configRef = useRef<{
+    cartItems: CartItem[];
+    customerInfo: typeof customerInfo;
+    config: ReturnType<typeof getPayPalConfig>;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [buttonRendered, setButtonRendered] = useState(false);
 
-  // Calculate order totals
-  const subtotal = calculateSubtotal(cartItems);
-  const deliveryTotal = calculateDeliveryTotal(cartItems);
-  const total = subtotal + deliveryTotal;
+  // Calculate order totals (memoized for performance)
+  const orderTotals = useMemo(() => {
+    const subtotal = calculateSubtotal(cartItems);
+    const deliveryTotal = calculateDeliveryTotal(cartItems);
+    const total = subtotal + deliveryTotal;
+    return { subtotal, deliveryTotal, total };
+  }, [cartItems]);
 
+  // Check if configuration has changed (more efficient than JSON.stringify)
+  const hasConfigChanged = useMemo(() => {
+    if (!configRef.current) return true;
+    return (
+      cartItems.length !== configRef.current.cartItems.length ||
+      cartItems.some((item, index) => 
+        item.product.id !== configRef.current!.cartItems[index]?.product.id ||
+        item.quantity !== configRef.current!.cartItems[index]?.quantity
+      ) ||
+      customerInfo.email !== configRef.current.customerInfo.email ||
+      customerInfo.fullName !== configRef.current.customerInfo.fullName ||
+      customerInfo.address.address !== configRef.current.customerInfo.address.address ||
+      customerInfo.address.city !== configRef.current.customerInfo.address.city ||
+      customerInfo.address.postcode !== configRef.current.customerInfo.address.postcode
+    );
+  }, [cartItems, customerInfo]);
+
+  // Load PayPal SDK on mount
   useEffect(() => {
-    // Check if PayPal is configured
     if (!isPayPalConfigured()) {
       setError('PayPal is not configured. Please contact support.');
       setIsLoading(false);
       return;
     }
 
-    // Load PayPal SDK if not already loaded
     if (!isSDKLoaded && !error) {
       loadPayPalSDK();
     }
-  }, []);
+  }, [isSDKLoaded, error, loadPayPalSDK]);
 
   // Re-render button when dependencies change and SDK is loaded
   useEffect(() => {
-    if (isSDKLoaded && window.paypal && !disabled && !error) {
-      const shouldRerender = 
-        !buttonRendered || 
-        JSON.stringify(cartItems) !== JSON.stringify(configRef.current?.cartItems) ||
-        JSON.stringify(customerInfo) !== JSON.stringify(configRef.current?.customerInfo);
-      
-      if (shouldRerender) {
-        console.log('Re-rendering PayPal button due to dependency change');
-        renderPayPalButton(window.paypal);
-      }
+    if (isSDKLoaded && window.paypal && !disabled && !error && (hasConfigChanged || !buttonRendered)) {
+      console.log('Re-rendering PayPal button due to dependency change');
+      renderPayPalButton(window.paypal);
     }
-  }, [isSDKLoaded, cartItems, customerInfo, disabled, error, buttonRendered]);
+  }, [isSDKLoaded, disabled, error, hasConfigChanged, buttonRendered, renderPayPalButton]);
 
-  const loadPayPalSDK = async () => {
+  const loadPayPalSDK = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -108,10 +130,10 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
 
       // Use the window.loadPayPalSDK function defined in index.html
       if (window.loadPayPalSDK) {
-        const paypal = await window.loadPayPalSDK(clientId);
+        await window.loadPayPalSDK(clientId);
         console.log('PayPal SDK loaded successfully');
         setIsSDKLoaded(true);
-        renderPayPalButton(paypal);
+        // Don't call renderPayPalButton here to avoid circular dependency
       } else {
         throw new Error('PayPal SDK loader not available');
       }
@@ -123,9 +145,9 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [onError]);
 
-  const renderPayPalButton = (paypal: PayPalNamespace) => {
+  const renderPayPalButton = useCallback((paypal: PayPalNamespace) => {
     if (!paypalRef.current || disabled) {
       console.log('PayPal button render skipped:', { hasRef: !!paypalRef.current, disabled });
       return;
@@ -139,11 +161,11 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
 
       const config = getPayPalConfig();
       
-      // Store current config for comparison
+      // Store current config for comparison (avoid deep cloning for performance)
       configRef.current = {
-        ...config,
-        cartItems: JSON.parse(JSON.stringify(cartItems)),
-        customerInfo: JSON.parse(JSON.stringify(customerInfo))
+        config,
+        cartItems: [...cartItems],
+        customerInfo: { ...customerInfo }
       };
 
       const buttonStyle = {
@@ -157,40 +179,46 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
 
       console.log('PayPal button style:', buttonStyle);
       console.log('Cart items for PayPal:', cartItems.length, 'items');
-      console.log('Total amount:', total);
+      console.log('Total amount:', orderTotals.total);
 
       const buttonsComponent = paypal.Buttons({
         style: buttonStyle,
       
-        createOrder: async (_data: any, actions: any) => {
+        createOrder: async (_data: Record<string, unknown>, actions: PayPalActions) => {
           try {
             console.log('Creating PayPal order...');
+            
             // Validate cart items before creating order
-            if (cartItems.length === 0) {
+            if (!cartItems || cartItems.length === 0) {
               throw new Error('Cart is empty');
             }
 
             // Validate total amount
-            if (total <= 0) {
+            if (orderTotals.total <= 0) {
               throw new Error('Invalid order total');
             }
 
+            // Validate customer information
+            if (!customerInfo.fullName.trim() || !customerInfo.email.trim()) {
+              throw new Error('Customer information is incomplete');
+            }
+
             // Create PayPal order
-            const orderData = {
+            const orderData: PayPalOrderData = {
               intent: 'CAPTURE',
               purchase_units: [{
                 description: `Wool Witch Order - ${cartItems.length} item(s)`,
                 amount: {
                   currency_code: config.currency,
-                  value: total.toFixed(2),
+                  value: orderTotals.total.toFixed(2),
                   breakdown: {
                     item_total: {
                       currency_code: config.currency,
-                      value: subtotal.toFixed(2)
+                      value: orderTotals.subtotal.toFixed(2)
                     },
                     shipping: {
                       currency_code: config.currency,
-                      value: deliveryTotal.toFixed(2)
+                      value: orderTotals.deliveryTotal.toFixed(2)
                     }
                   }
                 },
@@ -232,7 +260,9 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
             onError(errorMessage);
             throw error;
           }
-        },        onApprove: async (data: any, actions: any) => {
+        },
+        
+        onApprove: async (data: PayPalApprovalData, actions: PayPalActions) => {
           try {
             console.log('PayPal payment approved:', data);
             // Capture the payment
@@ -246,9 +276,9 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
               payer_email: captureResult.payer?.email_address,
               transaction_id: captureResult.id,
               capture_id: captureResult.purchase_units?.[0]?.payments?.captures?.[0]?.id,
-              gross_amount: total,
+              gross_amount: orderTotals.total,
               fee_amount: 0, // PayPal doesn't provide fee info in capture
-              net_amount: total
+              net_amount: orderTotals.total
             };
 
             // Prepare success data
@@ -270,15 +300,15 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
           }
         },
 
-        onError: (error: any) => {
+        onError: (error: Error | string) => {
           console.error('PayPal error:', error);
           const friendlyMessage = typeof error === 'string' 
             ? PayPalErrors.getErrorMessage(error)
-            : 'Payment could not be processed. Please try again.';
+            : PayPalErrors.getErrorMessage(error.message || 'Unknown error');
           onError(friendlyMessage);
         },
 
-        onCancel: (data: any) => {
+        onCancel: (data: Record<string, unknown>) => {
           console.log('PayPal payment cancelled:', data);
           if (onCancel) {
             onCancel();
@@ -291,7 +321,7 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
       buttonsComponent.render(paypalRef.current).then(() => {
         console.log('PayPal button rendered successfully');
         setButtonRendered(true);
-      }).catch((renderError: any) => {
+      }).catch((renderError: Error) => {
         console.error('PayPal button render error:', renderError);
         setError('Failed to render PayPal button');
       });
@@ -300,12 +330,7 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
       console.error('PayPal button setup error:', error);
       setError(error instanceof Error ? error.message : 'Failed to setup PayPal button');
     }
-  };  // Re-render button when dependencies change
-  useEffect(() => {
-    if (isSDKLoaded && window.paypal) {
-      renderPayPalButton(window.paypal);
-    }
-  }, [cartItems, customerInfo, disabled]);
+  }, [cartItems, customerInfo, disabled, orderTotals, style, onSuccess, onError, onCancel]);
 
   if (error) {
     return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ProductCard } from '../components/ProductCard';
 import { dataService } from '../lib/dataService';
 import type { Product } from '../types/database';
@@ -12,30 +12,7 @@ export function Shop() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [categories, setCategories] = useState<string[]>(['All']);
 
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
-
-  // Refetch when category or search changes (with debounce)
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchProducts();
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [selectedCategory, searchTerm]);
-
-  async function fetchCategories() {
-    try {
-      const categoryList = await dataService.getCategories();
-      setCategories(['All', ...categoryList]);
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
-    }
-  }
-
-  async function fetchProducts() {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const productList = await dataService.getProductList({
@@ -51,7 +28,22 @@ export function Shop() {
     } finally {
       setLoading(false);
     }
+  }, [selectedCategory, searchTerm]);
+
+  async function fetchCategories() {
+    try {
+      const categoryList = await dataService.getCategories();
+      setCategories(['All', ...categoryList]);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
   }
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchProducts]);
 
   // Handle keyboard shortcuts
   useEffect(() => {

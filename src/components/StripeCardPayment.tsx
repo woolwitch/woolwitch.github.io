@@ -57,9 +57,7 @@ interface StripeCardFormProps {
   className?: string;
 }
 
-interface StripeCardPaymentProps extends StripeCardFormProps {
-  // Additional props if needed
-}
+type StripeCardPaymentProps = StripeCardFormProps;
 
 // Inner form component that uses Stripe hooks
 const StripeCardForm: React.FC<StripeCardFormProps> = ({
@@ -86,6 +84,7 @@ const StripeCardForm: React.FC<StripeCardFormProps> = ({
   // Create payment intent when component mounts
   useEffect(() => {
     createPaymentIntent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [total, customerInfo.email]);
 
   const createPaymentIntent = async () => {

@@ -53,20 +53,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function checkAdminStatus(userId: string) {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .single();
-
       if (error) {
         throw error;
       }
-      
-      const isAdminUser = (data as any)?.role === 'admin';
+      const isAdminUser = (data && typeof data === 'object' && 'role' in data) ? (data as { role: string }).role === 'admin' : false;
       setIsAdmin(isAdminUser);
-    } catch (error) {
-      // Keep minimal error logging for debugging
+    } catch {
       setIsAdmin(false);
     } finally {
       setLoading(false);
@@ -124,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         
         if (signInError) throw signInError;
-      } catch (error) {
+      } catch {
         throw new Error('Mock Google authentication failed');
       }
     } else {

@@ -22,7 +22,7 @@ export function Admin() {
   const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [orderStats, setOrderStats] = useState<any>(null);
+  const [orderStats, setOrderStats] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -55,14 +55,14 @@ export function Admin() {
     try {
       setLoading(true);
       // For admin, we need full product data
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts((data as any) || []);
-    } catch (error) {
+      setProducts(data || []);
+    } catch {
       // Keep minimal error logging for debugging
     } finally {
       setLoading(false);
@@ -188,7 +188,7 @@ export function Admin() {
         .getPublicUrl(filePath);
 
       return data.publicUrl;
-    } catch (error) {
+    } catch {
       alert('Error uploading image. Please try again.');
       return null;
     } finally {
@@ -257,14 +257,14 @@ export function Admin() {
       };
 
       if (editingId) {
-        const { error } = await (supabase as any)
+        const { error } = await supabase
           .from('products')
           .update(productData)
           .eq('id', editingId);
 
         if (error) throw error;
       } else {
-        const { error } = await (supabase as any)
+        const { error } = await supabase
           .from('products')
           .insert([productData]);
 
@@ -276,7 +276,7 @@ export function Admin() {
 
       await fetchAllProducts();
       handleCancel();
-    } catch (error) {
+    } catch {
       alert('Error saving product. Please try again.');
     }
   };
@@ -285,7 +285,7 @@ export function Admin() {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('products')
         .delete()
         .eq('id', id);
@@ -296,7 +296,7 @@ export function Admin() {
       dataService.clearCache();
       
       await fetchAllProducts();
-    } catch (error) {
+    } catch {
       alert('Error deleting product. Please try again.');
     }
   };

@@ -1,11 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { validateCartProducts } from '../lib/cartDebug';
 import type { Product } from '../types/database';
-
-export interface CartItem {
-  product: Product;
-  quantity: number;
-}
+import type { CartItem } from '../types/cart';
 
 interface CartContextType {
   items: CartItem[];

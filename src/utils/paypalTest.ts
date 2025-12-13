@@ -9,7 +9,7 @@ import { getPayPalConfig, isPayPalConfigured } from '../lib/paypalConfig';
 /**
  * Test PayPal configuration
  */
-export const testPayPalConfig = (): { success: boolean; message: string; config?: any } => {
+export const testPayPalConfig = (): { success: boolean; message: string; config?: Record<string, unknown> } => {
   try {
     const config = getPayPalConfig();
     const isConfigured = isPayPalConfigured();
@@ -100,5 +100,5 @@ export const runPayPalTests = async () => {
 
 // For debugging - can be called from browser console
 if (typeof window !== 'undefined') {
-  (window as any).testPayPal = runPayPalTests;
+  (window as Record<string, unknown>).testPayPal = runPayPalTests;
 }

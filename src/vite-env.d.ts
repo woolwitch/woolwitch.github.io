@@ -21,12 +21,12 @@ interface PayPalNamespace {
 
 // PayPal Buttons component options
 interface PayPalButtonsOptions {
-  createOrder?: (data: any, actions: PayPalActions) => Promise<string>;
+  createOrder?: (data: Record<string, unknown>, actions: PayPalActions) => Promise<string>;
   onApprove?: (data: PayPalApprovalData, actions: PayPalActions) => Promise<void>;
-  onError?: (error: any) => void;
-  onCancel?: (data: any) => void;
-  onInit?: (data: any, actions: any) => void;
-  onClick?: (data: any, actions: any) => void;
+  onError?: (error: Error) => void;
+  onCancel?: (data: Record<string, unknown>) => void;
+  onInit?: (data: Record<string, unknown>, actions: PayPalActions) => void;
+  onClick?: (data: Record<string, unknown>, actions: PayPalActions) => void;
   style?: PayPalButtonStyle;
   fundingSource?: string;
   env?: 'sandbox' | 'production';
@@ -50,7 +50,7 @@ interface PayPalActions {
     get(): Promise<PayPalOrderDetails>;
   };
   payment?: {
-    create(paymentData: any): Promise<string>;
+    create(paymentData: Record<string, unknown>): Promise<string>;
   };
 }
 
@@ -140,8 +140,8 @@ interface PayPalCaptureResult {
         status: 'PENDING' | 'COMPLETED' | 'DECLINED' | 'PARTIALLY_REFUNDED' | 'REFUNDED';
         amount: PayPalAmount;
         final_capture?: boolean;
-        seller_protection?: any;
-        seller_receivable_breakdown?: any;
+        seller_protection?: Record<string, unknown>;
+        seller_receivable_breakdown?: Record<string, unknown>;
         create_time?: string;
         update_time?: string;
       }>;
@@ -151,7 +151,7 @@ interface PayPalCaptureResult {
     name?: { given_name?: string; surname?: string };
     email_address?: string;
     payer_id?: string;
-    address?: any;
+    address?: Record<string, unknown>;
   };
   create_time?: string;
   update_time?: string;
@@ -168,10 +168,10 @@ interface PayPalOrderDetails {
   intent: string;
   status: string;
   purchase_units: PayPalPurchaseUnit[];
-  payer?: any;
+  payer?: Record<string, unknown>;
   create_time?: string;
   update_time?: string;
-  links?: any[];
+  links?: Record<string, unknown>[];
 }
 
 // PayPal Buttons component
@@ -185,7 +185,7 @@ interface PayPalButtonsComponent {
 interface PayPalMessagesOptions {
   amount?: number;
   placement?: string;
-  style?: any;
+  style?: Record<string, unknown>;
 }
 
 // PayPal Payment Request options  
