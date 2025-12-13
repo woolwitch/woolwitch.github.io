@@ -9,6 +9,7 @@ import type { CartItem } from '../types/database';
 
 /**
  * Validate that all products in cart items exist in the database
+ * Optimized: Only fetches the specific product IDs in the cart, not all products
  */
 export async function validateCartProducts(cartItems: CartItem[]): Promise<{
   valid: boolean;
@@ -18,10 +19,18 @@ export async function validateCartProducts(cartItems: CartItem[]): Promise<{
   const errors: string[] = [];
   const invalidItems: CartItem[] = [];
   
-  // Get all current product IDs from database
+  // Early return if cart is empty - no database call needed
+  if (cartItems.length === 0) {
+    return { valid: true, invalidItems: [], errors: [] };
+  }
+  
+  // Get only the product IDs we need to validate (not all products!)
+  const productIds = cartItems.map(item => item.product.id);
+  
   const { data: products, error } = await supabase
     .from('products')
-    .select('id, name');
+    .select('id')
+    .in('id', productIds);
     
   if (error) {
     errors.push(`Failed to fetch products: ${error.message}`);

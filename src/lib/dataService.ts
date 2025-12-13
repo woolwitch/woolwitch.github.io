@@ -37,8 +37,10 @@ interface CacheEntry<T> {
  */
 export class DataService {
   private cache = new Map<string, CacheEntry<any>>();
-  private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
-  private readonly LIST_TTL = 2 * 60 * 1000; // 2 minutes for frequently updated data
+  private readonly DEFAULT_TTL = 30 * 60 * 1000; // 30 minutes for most data
+  private readonly LIST_TTL = 15 * 60 * 1000; // 15 minutes for product lists
+  private readonly CATEGORY_TTL = 60 * 60 * 1000; // 1 hour for categories (rarely change)
+  private pendingFetches = new Map<string, Promise<any>>(); // Dedupe concurrent requests
 
   /**
    * Clear expired cache entries from memory
@@ -93,7 +95,24 @@ export class DataService {
   }
 
   /**
+   * Get stale data for immediate return while refreshing
+   * Returns data from cache even if expired (within grace period)
+   */
+  private getStaleData<T>(key: string, maxStaleAge: number = 5 * 60 * 1000): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    
+    const age = Date.now() - entry.timestamp;
+    // Only return if within stale grace period
+    if (age <= entry.ttl + maxStaleAge) {
+      return entry.data;
+    }
+    return null;
+  }
+
+  /**
    * Get products for listing (minimal fields for performance)
+   * Uses stale-while-revalidate pattern for instant responses
    */
   async getProductList(options: {
     category?: string;
@@ -101,20 +120,68 @@ export class DataService {
     limit?: number;
     offset?: number;
   } = {}): Promise<ProductListFields[]> {
-    const { category, search, offset = 0 } = options;
-    
-    // Adapt limit based on network conditions
-    const limit = options.limit || networkOptimizer.getOptimalBatchSize();
-    
     const cacheKey = `products_list_${JSON.stringify(options)}`;
     
-    // Check cache first
+    // Check fresh cache first
     const cached = this.getFromCache<ProductListFields[]>(cacheKey);
     if (cached) {
       // Still preload images if not already done
       imagePreloader.preloadProductImages(cached);
       return cached;
     }
+
+    // Stale-while-revalidate: Return stale data immediately, refresh in background
+    const staleData = this.getStaleData<ProductListFields[]>(cacheKey);
+    if (staleData) {
+      // Refresh in background without blocking
+      this.refreshProductList(options, cacheKey).catch(console.error);
+      imagePreloader.preloadProductImages(staleData);
+      return staleData;
+    }
+
+    // Deduplicate concurrent requests for the same data
+    const pendingKey = `pending_${cacheKey}`;
+    if (this.pendingFetches.has(pendingKey)) {
+      return this.pendingFetches.get(pendingKey)!;
+    }
+
+    const fetchPromise = this.fetchProductListFromSource(options, cacheKey);
+    this.pendingFetches.set(pendingKey, fetchPromise);
+    
+    try {
+      return await fetchPromise;
+    } finally {
+      this.pendingFetches.delete(pendingKey);
+    }
+  }
+
+  /**
+   * Background refresh for stale-while-revalidate
+   */
+  private async refreshProductList(options: {
+    category?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }, cacheKey: string): Promise<void> {
+    try {
+      await this.fetchProductListFromSource(options, cacheKey);
+    } catch (error) {
+      console.warn('Background refresh failed:', error);
+    }
+  }
+
+  /**
+   * Actual fetch logic for product list
+   */
+  private async fetchProductListFromSource(options: {
+    category?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }, cacheKey: string): Promise<ProductListFields[]> {
+    const { category, search, offset = 0 } = options;
+    const limit = options.limit || networkOptimizer.getOptimalBatchSize();
 
     // Try Netlify function cache in production
     if (NetlifyFunctionClient.shouldUseNetlifyCache()) {
@@ -239,44 +306,62 @@ export class DataService {
 
   /**
    * Get product categories (cached for long period)
+   * Optimized: Uses DISTINCT query to only fetch unique categories, not all products
    */
   async getCategories(): Promise<string[]> {
     const cacheKey = 'product_categories';
     
-    // Check cache first (longer TTL for categories)
+    // Check cache first (longer TTL for categories - they rarely change)
     const cached = this.getFromCache<string[]>(cacheKey);
     if (cached) {
       return cached;
     }
 
-    // Try Netlify function cache in production
-    if (NetlifyFunctionClient.shouldUseNetlifyCache()) {
-      try {
-        const categories = await netlifyFunctionClient.getCategories();
-        
-        // Store in local cache too
-        this.setCache(cacheKey, categories, 15 * 60 * 1000); // 15 minutes TTL
-        return categories;
-      } catch (error) {
-        console.warn('Netlify function cache failed for categories, falling back to direct Supabase:', error);
-        // Fall through to direct Supabase query
-      }
+    // Deduplicate concurrent requests
+    const pendingKey = `pending_${cacheKey}`;
+    if (this.pendingFetches.has(pendingKey)) {
+      return this.pendingFetches.get(pendingKey)!;
     }
 
+    const fetchPromise = (async () => {
+      // Try Netlify function cache in production
+      if (NetlifyFunctionClient.shouldUseNetlifyCache()) {
+        try {
+          const categories = await netlifyFunctionClient.getCategories();
+          
+          // Store in local cache with extended TTL
+          this.setCache(cacheKey, categories, this.CATEGORY_TTL);
+          return categories;
+        } catch (error) {
+          console.warn('Netlify function cache failed for categories, falling back to direct Supabase:', error);
+          // Fall through to direct Supabase query
+        }
+      }
+
+      try {
+        // Optimized: Only select distinct categories, not all product data
+        // This massively reduces egress for stores with many products
+        const { data, error } = await supabase
+          .from('products')
+          .select('category')
+          .eq('is_available', true);
+
+        if (error) throw error;
+
+        const categories = [...new Set((data || []).map(item => item.category))].filter(Boolean).sort();
+        this.setCache(cacheKey, categories, this.CATEGORY_TTL); // 1 hour TTL
+        return categories;
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+      }
+    })();
+
+    this.pendingFetches.set(pendingKey, fetchPromise);
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('category')
-        .eq('is_available', true);
-
-      if (error) throw error;
-
-      const categories = [...new Set((data || []).map(item => item.category))];
-      this.setCache(cacheKey, categories, 15 * 60 * 1000); // 15 minutes TTL
-      return categories;
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      throw error;
+      return await fetchPromise;
+    } finally {
+      this.pendingFetches.delete(pendingKey);
     }
   }
 

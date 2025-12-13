@@ -1,9 +1,14 @@
 const { createClient } = require('@supabase/supabase-js');
 
 // In-memory cache for this function instance
+// Netlify Functions persist in memory between invocations (until cold start)
 const cache = new Map();
-const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
-const LIST_TTL = 2 * 60 * 1000; // 2 minutes for product lists
+const DEFAULT_TTL = 30 * 60 * 1000; // 30 minutes for most data
+const LIST_TTL = 15 * 60 * 1000; // 15 minutes for product lists
+const CATEGORY_TTL = 60 * 60 * 1000; // 1 hour for categories (rarely change)
+
+// Stale data grace period - return stale data while refreshing
+const STALE_GRACE_PERIOD = 10 * 60 * 1000; // 10 minutes
 
 // Initialize Supabase client
 let supabase = null;
@@ -23,31 +28,86 @@ function getSupabase() {
   return supabase;
 }
 
-// Cache helpers
-function getFromCache(key) {
+// Cache helpers with stale-while-revalidate support
+function getFromCache(key, allowStale = false) {
   const entry = cache.get(key);
   if (!entry) return null;
   
-  if (Date.now() > entry.timestamp + entry.ttl) {
-    cache.delete(key);
-    return null;
+  const now = Date.now();
+  const age = now - entry.timestamp;
+  
+  // Fresh data
+  if (age <= entry.ttl) {
+    return { data: entry.data, stale: false };
   }
-  return entry.data;
+  
+  // Stale but within grace period
+  if (allowStale && age <= entry.ttl + STALE_GRACE_PERIOD) {
+    return { data: entry.data, stale: true };
+  }
+  
+  // Too old, delete and return null
+  cache.delete(key);
+  return null;
 }
 
 function setCache(key, data, ttl = DEFAULT_TTL) {
   cache.set(key, { data, timestamp: Date.now(), ttl });
 }
 
-// Data fetching functions
+// Track in-flight requests to deduplicate
+const pendingRequests = new Map();
+
+// Data fetching functions with stale-while-revalidate
 async function getProducts(options = {}) {
   const { category, search, limit = 50, offset = 0 } = options;
   const cacheKey = `products_${JSON.stringify(options)}`;
   
-  // Check cache first
-  const cached = getFromCache(cacheKey);
-  if (cached) return cached;
+  // Check cache first (allow stale data for instant response)
+  const cached = getFromCache(cacheKey, true);
+  if (cached && !cached.stale) {
+    return { products: cached.data, fromCache: true };
+  }
+  
+  // Return stale data immediately, but trigger background refresh
+  if (cached && cached.stale) {
+    // Don't await, let it refresh in background
+    refreshProducts(options, cacheKey).catch(console.error);
+    return { products: cached.data, fromCache: true, stale: true };
+  }
 
+  // Deduplicate concurrent requests
+  if (pendingRequests.has(cacheKey)) {
+    const products = await pendingRequests.get(cacheKey);
+    return { products, fromCache: false };
+  }
+
+  const fetchPromise = fetchProductsFromSupabase(options, cacheKey);
+  pendingRequests.set(cacheKey, fetchPromise);
+  
+  try {
+    const products = await fetchPromise;
+    return { products, fromCache: false };
+  } finally {
+    pendingRequests.delete(cacheKey);
+  }
+}
+
+// Background refresh for stale-while-revalidate
+async function refreshProducts(options, cacheKey) {
+  if (pendingRequests.has(cacheKey)) return; // Already refreshing
+  
+  try {
+    await fetchProductsFromSupabase(options, cacheKey);
+  } catch (error) {
+    console.error('Background refresh failed:', error);
+  }
+}
+
+// Actual Supabase fetch
+async function fetchProductsFromSupabase(options, cacheKey) {
+  const { category, search, limit = 50, offset = 0 } = options;
+  
   try {
     const supabase = getSupabase();
     let query = supabase
@@ -80,10 +140,46 @@ async function getProducts(options = {}) {
 async function getCategories() {
   const cacheKey = 'categories';
   
-  // Check cache first
-  const cached = getFromCache(cacheKey);
-  if (cached) return cached;
+  // Check cache first (allow stale data)
+  const cached = getFromCache(cacheKey, true);
+  if (cached && !cached.stale) {
+    return { categories: cached.data, fromCache: true };
+  }
+  
+  if (cached && cached.stale) {
+    // Return stale, refresh in background
+    refreshCategories(cacheKey).catch(console.error);
+    return { categories: cached.data, fromCache: true, stale: true };
+  }
 
+  // Deduplicate concurrent requests
+  if (pendingRequests.has(cacheKey)) {
+    const categories = await pendingRequests.get(cacheKey);
+    return { categories, fromCache: false };
+  }
+
+  const fetchPromise = fetchCategoriesFromSupabase(cacheKey);
+  pendingRequests.set(cacheKey, fetchPromise);
+  
+  try {
+    const categories = await fetchPromise;
+    return { categories, fromCache: false };
+  } finally {
+    pendingRequests.delete(cacheKey);
+  }
+}
+
+async function refreshCategories(cacheKey) {
+  if (pendingRequests.has(cacheKey)) return;
+  
+  try {
+    await fetchCategoriesFromSupabase(cacheKey);
+  } catch (error) {
+    console.error('Background categories refresh failed:', error);
+  }
+}
+
+async function fetchCategoriesFromSupabase(cacheKey) {
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
@@ -93,8 +189,8 @@ async function getCategories() {
 
     if (error) throw error;
 
-    const categories = [...new Set(data?.map(item => item.category) || [])];
-    setCache(cacheKey, categories, DEFAULT_TTL);
+    const categories = [...new Set(data?.map(item => item.category) || [])].filter(Boolean).sort();
+    setCache(cacheKey, categories, CATEGORY_TTL);
     return categories;
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -132,7 +228,7 @@ exports.handler = async (event, context) => {
     const action = event.queryStringParameters?.action || 'products';
 
     if (action === 'health') {
-      // Health check with environment status
+      // Health check with environment status and cache stats
       const hasUrl = !!process.env.VITE_SUPABASE_URL;
       const hasKey = !!process.env.VITE_SUPABASE_ANON_KEY;
       
@@ -141,11 +237,13 @@ exports.handler = async (event, context) => {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
         },
         body: JSON.stringify({
           success: true,
           status: 'ok',
           timestamp: new Date().toISOString(),
+          cacheSize: cache.size,
           environment: {
             supabase_configured: hasUrl && hasKey,
             has_url: hasUrl,
@@ -155,17 +253,20 @@ exports.handler = async (event, context) => {
       };
     }
 
-    let responseData;
+    let result;
+    let cacheMaxAge;
 
     if (action === 'categories') {
-      responseData = await getCategories();
+      result = await getCategories();
+      cacheMaxAge = 3600; // 1 hour for categories (rarely change)
     } else if (action === 'products') {
       const category = event.queryStringParameters?.category;
       const search = event.queryStringParameters?.search;
       const limit = event.queryStringParameters?.limit ? parseInt(event.queryStringParameters.limit) : undefined;
       const offset = event.queryStringParameters?.offset ? parseInt(event.queryStringParameters.offset) : undefined;
       
-      responseData = await getProducts({ category, search, limit, offset });
+      result = await getProducts({ category, search, limit, offset });
+      cacheMaxAge = 900; // 15 minutes for products
     } else {
       return {
         statusCode: 400,
@@ -180,17 +281,27 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Extract data based on action type
+    const responseData = action === 'categories' ? result.categories : result.products;
+    const fromCache = result.fromCache || false;
+    const isStale = result.stale || false;
+
     return {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300',
+        // CDN cache: public with stale-while-revalidate for instant responses
+        'Cache-Control': `public, max-age=${cacheMaxAge}, stale-while-revalidate=${cacheMaxAge * 2}`,
+        // Custom headers for debugging
+        'X-Cache-Status': fromCache ? (isStale ? 'STALE' : 'HIT') : 'MISS',
       },
       body: JSON.stringify({
         success: true,
         data: responseData,
         cached: Date.now(),
+        fromCache,
+        stale: isStale,
         count: Array.isArray(responseData) ? responseData.length : null
       })
     };
