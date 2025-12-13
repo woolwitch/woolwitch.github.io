@@ -143,13 +143,13 @@ export function Admin() {
       // Validate file type
       const validTypes: readonly string[] = VALIDATION.ALLOWED_IMAGE_TYPES;
       if (!validTypes.includes(file.type)) {
-        alert('Please select a valid image file (JPEG, PNG, WebP, or GIF)');
+        alert('Please select a valid image file (JPEG, PNG, or WebP)');
         return;
       }
 
-      // Validate file size (5MB limit)
+      // Validate file size (2MB limit for optimal web performance)
       if (file.size > STORAGE.MAX_IMAGE_SIZE) {
-        alert('Image size must be less than 5MB');
+        alert('Image size must be less than 2MB');
         return;
       }
 
