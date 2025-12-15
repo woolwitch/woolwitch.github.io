@@ -4,7 +4,7 @@ This directory contains Netlify serverless functions that provide cached product
 
 ## Functions
 
-### `cache-products.ts`
+### `cache-products.cjs`
 
 A caching layer for product data that:
 - Fetches products from Supabase with in-memory caching
