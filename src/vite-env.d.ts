@@ -141,7 +141,10 @@ interface PayPalCaptureResult {
         amount: PayPalAmount;
         final_capture?: boolean;
         seller_protection?: Record<string, unknown>;
-        seller_receivable_breakdown?: Record<string, unknown>;
+        seller_receivable_breakdown?: {
+          paypal_fee?: { currency_code: string; value: string };
+          net_amount?: { currency_code: string; value: string };
+        };
         create_time?: string;
         update_time?: string;
       }>;

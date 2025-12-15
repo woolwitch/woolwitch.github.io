@@ -18,12 +18,20 @@ interface ProductFormData {
   is_available: boolean;
 }
 
+interface OrderStatistics {
+  totalOrders: number;
+  totalRevenue: number;
+  ordersByStatus: Record<string, number>;
+  ordersByPaymentMethod: Record<string, number>;
+  recentOrders: Order[];
+}
+
 export function Admin() {
   const { isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [orderStats, setOrderStats] = useState<Record<string, unknown> | null>(null);
+  const [orderStats, setOrderStats] = useState<OrderStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);

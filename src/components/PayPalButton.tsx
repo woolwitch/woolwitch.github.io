@@ -96,27 +96,7 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
     );
   }, [cartItems, customerInfo]);
 
-  // Load PayPal SDK on mount
-  useEffect(() => {
-    if (!isPayPalConfigured()) {
-      setError('PayPal is not configured. Please contact support.');
-      setIsLoading(false);
-      return;
-    }
-
-    if (!isSDKLoaded && !error) {
-      loadPayPalSDK();
-    }
-  }, [isSDKLoaded, error, loadPayPalSDK]);
-
-  // Re-render button when dependencies change and SDK is loaded
-  useEffect(() => {
-    if (isSDKLoaded && window.paypal && !disabled && !error && (hasConfigChanged || !buttonRendered)) {
-      console.log('Re-rendering PayPal button due to dependency change');
-      renderPayPalButton(window.paypal);
-    }
-  }, [isSDKLoaded, disabled, error, hasConfigChanged, buttonRendered, renderPayPalButton]);
-
+  // Load PayPal SDK functions (declared before useEffect to avoid hoisting issues)
   const loadPayPalSDK = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -249,88 +229,129 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
                 user_action: 'PAY_NOW'
               }
             };
-            
-            console.log('PayPal order data:', orderData);
+
             const orderId = await actions.order.create(orderData);
-            console.log('PayPal order created:', orderId);
+            console.log('PayPal order created successfully:', orderId);
             return orderId;
-          } catch (error) {
-            console.error('PayPal order creation error:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Failed to create PayPal order';
+          } catch (err) {
+            console.error('Error creating PayPal order:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Failed to create PayPal order';
+            setError(errorMessage);
             onError(errorMessage);
-            throw error;
+            throw err;
           }
         },
-        
+
         onApprove: async (data: PayPalApprovalData, actions: PayPalActions) => {
           try {
-            console.log('PayPal payment approved:', data);
-            // Capture the payment
-            const captureResult = await actions.order.capture();
-            console.log('PayPal payment captured:', captureResult);
+            console.log('PayPal payment approved:', data.orderID);
             
-            // Extract payment details
-            const paymentDetails: PayPalDetails = {
-              paypal_order_id: data.orderID,
-              payer_id: data.payerID,
-              payer_email: captureResult.payer?.email_address,
-              transaction_id: captureResult.id,
-              capture_id: captureResult.purchase_units?.[0]?.payments?.captures?.[0]?.id,
-              gross_amount: orderTotals.total,
-              fee_amount: 0, // PayPal doesn't provide fee info in capture
-              net_amount: orderTotals.total
-            };
+            if (!actions.order) {
+              throw new Error('PayPal order actions not available');
+            }
 
-            // Prepare success data
+            const captureResult = await actions.order.capture();
+            console.log('Payment captured:', captureResult);
+
+            if (!captureResult.purchase_units?.[0]?.payments?.captures?.[0]) {
+              throw new Error('Payment capture failed - no capture data returned');
+            }
+
+            const capture = captureResult.purchase_units[0].payments.captures[0];
+            const payer = captureResult.payer;
+
             const paymentData: PayPalPaymentData = {
               orderID: data.orderID,
               payerID: data.payerID,
-              paymentID: captureResult.id,
-              details: paymentDetails,
+              paymentID: capture.id,
+              details: {
+                paypal_order_id: data.orderID,
+                payer_id: data.payerID,
+                payer_email: payer?.email_address,
+                transaction_id: capture.id,
+                capture_id: capture.id,
+                gross_amount: parseFloat(capture.amount.value),
+                fee_amount: capture.seller_receivable_breakdown?.paypal_fee?.value 
+                  ? parseFloat(capture.seller_receivable_breakdown.paypal_fee.value)
+                  : 0,
+                net_amount: capture.seller_receivable_breakdown?.net_amount?.value
+                  ? parseFloat(capture.seller_receivable_breakdown.net_amount.value)
+                  : parseFloat(capture.amount.value)
+              },
               captureResult
             };
 
-            // Call success handler
+            console.log('Calling onSuccess with payment data');
             await onSuccess(paymentData);
-            
-          } catch (error) {
-            console.error('PayPal payment processing error:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Payment processing failed';
+            return;
+          } catch (err) {
+            console.error('Error processing PayPal payment:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Failed to process PayPal payment';
+            setError(errorMessage);
             onError(errorMessage);
+            throw err;
           }
         },
 
-        onError: (error: Error | string) => {
-          console.error('PayPal error:', error);
-          const friendlyMessage = typeof error === 'string' 
-            ? PayPalErrors.getErrorMessage(error)
-            : PayPalErrors.getErrorMessage(error.message || 'Unknown error');
-          onError(friendlyMessage);
+        onError: (err: Error) => {
+          console.error('PayPal button error:', err);
+          const errorMessage = PayPalErrors.getErrorMessage(err.message);
+          setError(errorMessage);
+          onError(errorMessage);
         },
 
         onCancel: (data: Record<string, unknown>) => {
-          console.log('PayPal payment cancelled:', data);
+          console.log('PayPal payment cancelled:', data.orderID);
           if (onCancel) {
             onCancel();
           }
         }
-        
       });
 
-      // Render the button and track success
-      buttonsComponent.render(paypalRef.current).then(() => {
-        console.log('PayPal button rendered successfully');
-        setButtonRendered(true);
-      }).catch((renderError: Error) => {
-        console.error('PayPal button render error:', renderError);
-        setError('Failed to render PayPal button');
-      });
-
-    } catch (error) {
-      console.error('PayPal button setup error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to setup PayPal button');
+      if (buttonsComponent.isEligible()) {
+        buttonsComponent.render(paypalRef.current)
+          .then(() => {
+            console.log('PayPal button rendered successfully');
+            setButtonRendered(true);
+            setIsLoading(false);
+          })
+          .catch((err: Error) => {
+            console.error('Failed to render PayPal button:', err);
+            setError('Failed to display PayPal button');
+          });
+      } else {
+        console.error('PayPal buttons not eligible');
+        setError('PayPal payment not available');
+      }
+    } catch (err) {
+      console.error('Error setting up PayPal button:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to set up PayPal button';
+      setError(errorMessage);
+      onError(errorMessage);
     }
-  }, [cartItems, customerInfo, disabled, orderTotals, style, onSuccess, onError, onCancel]);
+  }, [cartItems, customerInfo, onSuccess, onError, onCancel, disabled, style, orderTotals]);
+
+  // Load PayPal SDK on mount
+  useEffect(() => {
+    if (!isPayPalConfigured()) {
+      setError('PayPal is not configured. Please contact support.');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!isSDKLoaded && !error) {
+      loadPayPalSDK();
+    }
+  }, [isSDKLoaded, error, loadPayPalSDK]);
+
+  // Re-render button when dependencies change and SDK is loaded
+  useEffect(() => {
+    if (isSDKLoaded && window.paypal && !disabled && !error && (hasConfigChanged || !buttonRendered)) {
+      console.log('Re-rendering PayPal button due to dependency change');
+      renderPayPalButton(window.paypal);
+    }
+  }, [isSDKLoaded, disabled, error, hasConfigChanged, buttonRendered, renderPayPalButton]);
+
 
   if (error) {
     return (

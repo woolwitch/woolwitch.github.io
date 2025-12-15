@@ -18,6 +18,11 @@ interface ImagePreloadOptions {
   formats?: string[];
 }
 
+interface NetworkInformation {
+  effectiveType?: '4g' | '3g' | '2g' | 'slow-2g';
+  saveData?: boolean;
+}
+
 /**
  * Enhanced localStorage cache with TTL and versioning
  */
@@ -239,7 +244,8 @@ export class ImagePreloader {
   preloadProductImages(products: { image_url?: string }[]): void {
     const imageUrls = products
       .filter(product => product.image_url)
-      .map(product => product.image_url);
+      .map(product => product.image_url)
+      .filter((url): url is string => typeof url === 'string');
     
     // Preload first few images with high priority
     const priorityUrls = imageUrls.slice(0, 6);
@@ -306,7 +312,7 @@ export class ImagePreloader {
  * Network-aware loading strategy
  */
 export class NetworkOptimizer {
-  private connection = (navigator as unknown as { connection?: unknown }).connection;
+  private connection = (navigator as unknown as { connection?: NetworkInformation }).connection;
   private cachedQuality: number | null = null;
   private lastQualityCheck = 0;
   private readonly QUALITY_CACHE_DURATION = 30000; // 30 seconds

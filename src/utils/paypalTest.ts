@@ -100,5 +100,5 @@ export const runPayPalTests = async () => {
 
 // For debugging - can be called from browser console
 if (typeof window !== 'undefined') {
-  (window as Record<string, unknown>).testPayPal = runPayPalTests;
+  (window as unknown as Record<string, unknown>).testPayPal = runPayPalTests;
 }
