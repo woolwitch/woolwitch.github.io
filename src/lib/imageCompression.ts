@@ -103,8 +103,8 @@ function compressWithQuality(
   resolve: (file: File) => void,
   reject: (error: Error) => void
 ) {
-  // PNG and WebP support quality parameters for compression level control
-  // For PNG, the quality parameter may have less impact than JPEG, so we use larger steps
+  // All formats support quality parameters for compression level control
+  // PNG quality parameter may have less impact, so we use larger steps for faster convergence
   canvas.toBlob(
     (blob) => {
       if (!blob) {
