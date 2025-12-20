@@ -36,14 +36,13 @@ jobs:
       with:
         version: latest
         
-        # TODO: comment back in when migrations are needed
-    # - name: Run Supabase migrations
-    #   run: |
-    #     # Link to remote project and push migrations
-    #     supabase link --project-ref $(echo "${{ secrets.VITE_SUPABASE_URL }}" | sed 's/.*\/\/\([^.]*\).*/\1/')
-    #     supabase db push
-    #   env:
-    #     SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    - name: Run Supabase migrations
+      run: |
+        # Link to remote project and push migrations
+        supabase link --project-ref $(echo "${{ secrets.VITE_SUPABASE_URL }}" | sed 's/.*\/\/\([^.]*\).*/\1/')
+        supabase db push
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: Build application
       run: npm run build
