@@ -57,16 +57,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        throw error;
+      // maybeSingle() returns null data if no row found, not an error
+      // Only treat it as an error if there's a real database error
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking admin status:', error);
       }
       
       const isAdminUser = (data as any)?.role === 'admin';
       setIsAdmin(isAdminUser);
     } catch (error) {
-      // Keep minimal error logging for debugging
+      // Log unexpected errors for debugging
+      console.error('Unexpected error checking admin status:', error);
       setIsAdmin(false);
     } finally {
       setLoading(false);
