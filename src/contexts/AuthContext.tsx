@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isAdminUser = data?.role === 'admin';
       setIsAdmin(isAdminUser);
     } catch (error) {
-      // Log unexpected errors for debugging
+      // Catch any unexpected errors (e.g., network issues, runtime exceptions)
       console.error('Unexpected error checking admin status:', error);
       setIsAdmin(false);
     } finally {
