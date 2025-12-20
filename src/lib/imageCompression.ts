@@ -47,8 +47,7 @@ function getBestOutputFormat(file: File, canvas: HTMLCanvasElement): { mimeType:
     return { mimeType: 'image/png', extension: '.png' };
   }
   
-  // For GIF without transparency, convert to JPEG for better compression
-  // For other formats without transparency, use JPEG for better compression
+  // For images without transparency, use JPEG for better compression
   return { mimeType: 'image/jpeg', extension: '.jpg' };
 }
 
@@ -72,8 +71,7 @@ export async function compressImage(file: File): Promise<File> {
         const width = img.width;
         const height = img.height;
         
-        // Calculate scaling factor to reduce file size
-        // Start with original dimensions and reduce quality
+        // Set canvas to original image dimensions
         canvas.width = width;
         canvas.height = height;
         
@@ -105,8 +103,8 @@ function compressWithQuality(
   resolve: (file: File) => void,
   reject: (error: Error) => void
 ) {
-  // PNG doesn't support quality parameter in most browsers, but we'll pass it anyway
-  // For PNG, quality parameter may be ignored, so we rely more on dimension reduction
+  // PNG and WebP support quality parameters for compression level control
+  // For PNG, the quality parameter may have less impact than JPEG, so we use larger steps
   canvas.toBlob(
     (blob) => {
       if (!blob) {
