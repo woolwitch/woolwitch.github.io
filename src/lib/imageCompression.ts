@@ -2,6 +2,7 @@
  * Image compression utility
  * Compresses images to under 50KB while maintaining reasonable quality
  * Uses Web Worker to keep UI responsive during compression
+ * Preserves transparency for PNG images and original format for web-optimized formats
  */
 
 const MAX_SIZE_KB = 50;
@@ -9,6 +10,50 @@ const MAX_SIZE_BYTES = MAX_SIZE_KB * 1024;
 
 // Type for progress callback
 export type CompressionProgressCallback = (progress: number) => void;
+
+/**
+ * Detects if an image has transparency by checking alpha channel
+ */
+function hasTransparency(canvas: HTMLCanvasElement): boolean {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return false;
+  
+  try {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    // Check alpha channel (every 4th byte starting from index 3)
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] < 255) {
+        return true; // Found a pixel with transparency
+      }
+    }
+    return false;
+  } catch {
+    // If we can't read the image data (e.g., tainted canvas), assume no transparency
+    return false;
+  }
+}
+
+/**
+ * Determines the best output format for the image
+ */
+function getBestOutputFormat(file: File, canvas: HTMLCanvasElement): { mimeType: string; extension: string } {
+  const originalType = file.type.toLowerCase();
+  
+  // WebP is already well-optimized, preserve it
+  if (originalType === 'image/webp') {
+    return { mimeType: 'image/webp', extension: '.webp' };
+  }
+  
+  // Check for transparency - if present, must use PNG
+  if (hasTransparency(canvas)) {
+    return { mimeType: 'image/png', extension: '.png' };
+  }
+  
+  // For images without transparency, use JPEG for better compression
+  return { mimeType: 'image/jpeg', extension: '.jpg' };
+}
 
 /**
  * Compress image using Web Worker for better performance
@@ -142,9 +187,10 @@ async function compressOnMainThread(
 
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-
+        const width = img.width;
+        const height = img.height;
+        
+        // Set canvas to original image dimensions
         canvas.width = width;
         canvas.height = height;
 
@@ -155,9 +201,12 @@ async function compressOnMainThread(
         }
 
         ctx.drawImage(img, 0, 0, width, height);
-
+        
+        // Determine best output format based on image characteristics
+        const outputFormat = getBestOutputFormat(file, canvas);
+        
         // Try different quality levels until we get under the size limit
-        compressWithQuality(canvas, file.name, 0.9, resolve, reject, onProgress);
+        compressWithQuality(canvas, file.name, outputFormat, 0.9, resolve, reject, onProgress);
       };
 
       img.onerror = () => reject(new Error('Failed to load image'));
@@ -168,6 +217,7 @@ async function compressOnMainThread(
 function compressWithQuality(
   canvas: HTMLCanvasElement,
   fileName: string,
+  outputFormat: { mimeType: string; extension: string },
   quality: number,
   resolve: (file: File) => void,
   reject: (error: Error) => void,
@@ -181,6 +231,8 @@ function compressWithQuality(
     onProgress(Math.min((iteration / maxIterations) * 100, 90));
   }
 
+  // All formats support quality parameters for compression level control
+  // PNG quality parameter may have less impact, so we use larger steps for faster convergence
   canvas.toBlob(
     (blob) => {
       if (!blob) {
@@ -189,8 +241,10 @@ function compressWithQuality(
       }
 
       // If still too large and quality can be reduced, try again
+      // For PNG, this may not help much, so we'll move to dimension reduction faster
+      const qualityStep = outputFormat.mimeType === 'image/png' ? 0.2 : 0.1;
       if (blob.size > MAX_SIZE_BYTES && quality > 0.1 && iteration < maxIterations) {
-        compressWithQuality(canvas, fileName, quality - 0.1, resolve, reject, onProgress, iteration + 1);
+        compressWithQuality(canvas, fileName, outputFormat, quality - qualityStep, resolve, reject, onProgress, iteration + 1);
         return;
       }
 
@@ -224,7 +278,7 @@ function compressWithQuality(
         ctx.drawImage(tempCanvas, 0, 0);
 
         // Try compression again with reset quality
-        compressWithQuality(canvas, fileName, 0.9, resolve, reject, onProgress, iteration + 1);
+        compressWithQuality(canvas, fileName, outputFormat, 0.9, resolve, reject, onProgress, iteration + 1);
         return;
       }
 
@@ -233,17 +287,29 @@ function compressWithQuality(
         onProgress(100);
       }
 
-      // Success! Convert blob to File
-      const compressedFile = new File([blob], fileName, {
-        type: 'image/jpeg',
+      // Success! Convert blob to File with appropriate type and filename
+      const newFileName = updateFileExtension(fileName, outputFormat.extension);
+      const compressedFile = new File([blob], newFileName, {
+        type: outputFormat.mimeType,
         lastModified: Date.now(),
       });
 
       resolve(compressedFile);
     },
-    'image/jpeg',
+    outputFormat.mimeType,
     quality
   );
+}
+
+/**
+ * Updates the file extension to match the output format
+ */
+function updateFileExtension(fileName: string, newExtension: string): string {
+  const lastDotIndex = fileName.lastIndexOf('.');
+  if (lastDotIndex === -1) {
+    return fileName + newExtension;
+  }
+  return fileName.substring(0, lastDotIndex) + newExtension;
 }
 
 export function formatFileSize(bytes: number): string {
