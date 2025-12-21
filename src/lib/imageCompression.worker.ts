@@ -93,8 +93,20 @@ async function compressWithQuality(
 
   // If we've reduced quality to minimum and still too large, resize dimensions
   if (blob.size > MAX_SIZE_BYTES && iteration < maxIterations) {
-    const newWidth = Math.floor(canvas.width * 0.8);
-    const newHeight = Math.floor(canvas.height * 0.8);
+    // Calculate how much to reduce dimensions based on size ratio
+    const sizeRatio = blob.size / MAX_SIZE_BYTES;
+    let scaleFactor: number;
+    
+    if (sizeRatio > 4) {
+      scaleFactor = 0.5; // Very oversized - reduce by 50%
+    } else if (sizeRatio > 2) {
+      scaleFactor = 0.7; // Moderately oversized - reduce by 30%
+    } else {
+      scaleFactor = 0.8; // Slightly oversized - reduce by 20%
+    }
+    
+    const newWidth = Math.floor(canvas.width * scaleFactor);
+    const newHeight = Math.floor(canvas.height * scaleFactor);
 
     // Create new canvas with reduced dimensions
     const tempCanvas = new OffscreenCanvas(newWidth, newHeight);

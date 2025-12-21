@@ -114,8 +114,22 @@ async function compressWithWorker(
       img.onload = () => {
         // Create canvas to get ImageData
         const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
+        let width = img.width;
+        let height = img.height;
+        
+        // For very large files, pre-scale dimensions aggressively
+        const estimatedRawSize = width * height * 3;
+        const estimatedCompressedSize = estimatedRawSize / 10;
+        
+        if (estimatedCompressedSize > MAX_SIZE_BYTES) {
+          const scaleFactor = Math.sqrt(MAX_SIZE_BYTES / estimatedCompressedSize);
+          width = Math.floor(width * scaleFactor);
+          height = Math.floor(height * scaleFactor);
+          console.log(`Pre-scaling large image from ${img.width}x${img.height} to ${width}x${height}`);
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext('2d');
 
         if (!ctx) {
@@ -124,7 +138,7 @@ async function compressWithWorker(
           return;
         }
 
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, width, height);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         
         // Determine best output format based on image characteristics
@@ -192,10 +206,23 @@ async function compressOnMainThread(
 
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const width = img.width;
-        const height = img.height;
+        let width = img.width;
+        let height = img.height;
         
-        // Set canvas to original image dimensions
+        // For very large files, pre-scale dimensions aggressively
+        // Estimate: JPEG at quality 0.7 is roughly 1/10th of raw pixels
+        // Target: dimensions that would yield ~50KB at quality 0.7
+        const estimatedRawSize = width * height * 3; // 3 bytes per pixel (RGB)
+        const estimatedCompressedSize = estimatedRawSize / 10; // rough JPEG compression estimate
+        
+        if (estimatedCompressedSize > MAX_SIZE_BYTES) {
+          // Scale down dimensions to hit target size
+          const scaleFactor = Math.sqrt(MAX_SIZE_BYTES / estimatedCompressedSize);
+          width = Math.floor(width * scaleFactor);
+          height = Math.floor(height * scaleFactor);
+          console.log(`Pre-scaling large image from ${img.width}x${img.height} to ${width}x${height}`);
+        }
+        
         canvas.width = width;
         canvas.height = height;
 
@@ -261,9 +288,24 @@ function compressWithQuality(
           return;
         }
 
-        // Reduce dimensions by 20%
-        const newWidth = Math.floor(canvas.width * 0.8);
-        const newHeight = Math.floor(canvas.height * 0.8);
+        // Calculate how much to reduce dimensions based on size ratio
+        // If still way over limit, be more aggressive
+        const sizeRatio = blob.size / MAX_SIZE_BYTES;
+        let scaleFactor: number;
+        
+        if (sizeRatio > 4) {
+          // Very oversized - reduce by 50%
+          scaleFactor = 0.5;
+        } else if (sizeRatio > 2) {
+          // Moderately oversized - reduce by 30%
+          scaleFactor = 0.7;
+        } else {
+          // Slightly oversized - reduce by 20%
+          scaleFactor = 0.8;
+        }
+        
+        const newWidth = Math.floor(canvas.width * scaleFactor);
+        const newHeight = Math.floor(canvas.height * scaleFactor);
 
         // Create temporary canvas to resize
         const tempCanvas = document.createElement('canvas');
