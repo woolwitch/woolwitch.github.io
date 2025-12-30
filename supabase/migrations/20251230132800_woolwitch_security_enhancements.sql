@@ -97,6 +97,8 @@ ADD CONSTRAINT products_category_length_check
 CHECK (char_length(category) >= 1 AND char_length(category) <= 100);
 
 -- Create index on email for faster lookups and better performance on email validation
+-- Note: This is NOT a unique index as customers can have multiple orders with the same email
+-- This is the expected behavior for an e-commerce order system
 CREATE INDEX IF NOT EXISTS idx_orders_email_lookup ON woolwitch.orders(email);
 
 -- Add comment documenting security constraints
