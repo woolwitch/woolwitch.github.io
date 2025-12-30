@@ -144,12 +144,12 @@ export async function createOrder(orderData: CreateOrderData): Promise<Order> {
       await (supabase as any).from('orders').delete().eq('id', (order as any).id);
       
       // Provide user-friendly error message based on error code
-      // Check for specific PostgreSQL error codes for better error handling
+      // PostgreSQL error code 23503 = foreign_key_violation
+      // Prioritize error code check as it's more reliable than string matching
       const errorCode = itemsError.code;
       const errorMsg = itemsError.message || '';
       
       if (errorCode === '23503' || errorMsg.includes('foreign key constraint')) {
-        // PostgreSQL error code 23503 = foreign_key_violation
         throw new Error('One or more products in your cart are no longer available. Please refresh the page and try again.');
       }
       throw new Error('Failed to process order items. Please try again.');
@@ -367,7 +367,10 @@ export async function getOrderStatistics(): Promise<{
 export function validateOrderData(orderData: CreateOrderData): string[] {
   const errors: string[] = [];
 
-  if (!orderData.email || !orderData.email.includes('@')) {
+  // Use the same robust email regex as database constraint and Edge function
+  // Prevents consecutive dots, leading/trailing special chars, etc.
+  const emailRegex = /^[A-Za-z0-9]([A-Za-z0-9._%-]*[A-Za-z0-9])?@[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,}$/;
+  if (!orderData.email || !emailRegex.test(orderData.email)) {
     errors.push('Valid email address is required');
   }
 

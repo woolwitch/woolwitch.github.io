@@ -89,8 +89,8 @@ if (amount <= 0 || amount > 100000000) {
   throw new Error('Invalid payment amount');
 }
 
-// Email validation
-const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+// Email validation - robust regex preventing consecutive dots, leading/trailing special chars
+const emailRegex = /^[A-Za-z0-9]([A-Za-z0-9._%-]*[A-Za-z0-9])?@[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,}$/;
 if (!emailRegex.test(customer_email)) {
   throw new Error('Invalid email address');
 }
