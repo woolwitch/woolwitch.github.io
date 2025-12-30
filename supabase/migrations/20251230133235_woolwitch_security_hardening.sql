@@ -137,9 +137,9 @@ ALTER TABLE woolwitch.payments ENABLE ROW LEVEL SECURITY;
 
 -- Document this security hardening for compliance
 COMMENT ON SCHEMA woolwitch IS 
-  'Woolwitch e-commerce schema. Last security audit: 2024-12-30. '
-  'Security features: RLS on all tables, principle of least privilege, '
-  'sensitive data protection, admin-only upload policies.';
+  'Woolwitch e-commerce schema. Security features: RLS on all tables, '
+  'principle of least privilege, sensitive data protection, admin-only upload policies. '
+  'See docs/SECURITY.md for full security documentation and audit history.';
 
 -- ========================================
 -- DEFAULT PRIVILEGES FOR FUTURE OBJECTS

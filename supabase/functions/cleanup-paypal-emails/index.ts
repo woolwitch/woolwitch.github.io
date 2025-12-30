@@ -133,16 +133,13 @@ serve(async (req) => {
     for (const payment of paymentsWithEmail) {
       if (!payment.paypal_details) continue;
       
-      // Create a copy and remove payer_email from the JSONB object
-      const cleanedDetails: PayPalDetails = {
-        ...payment.paypal_details,
-      };
-      delete cleanedDetails.payer_email;
+      // Remove payer_email using object destructuring for better performance
+      const { payer_email, ...cleanedDetails } = payment.paypal_details;
 
       // Update the payment record
       const { error: updateError } = await supabase
         .from('payments')
-        .update({ paypal_details: cleanedDetails })
+        .update({ paypal_details: cleanedDetails as PayPalDetails })
         .eq('id', payment.id);
 
       if (updateError) {

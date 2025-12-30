@@ -1,9 +1,12 @@
 # Database Security Audit Report
 
 **Project**: Woolwitch E-commerce Platform  
-**Audit Date**: 2024-12-30  
+**Audit Date**: 2024-12-30 _(Note: Update this date when performing future security audits)_  
 **Auditor**: GitHub Copilot Security Review  
 **Status**: ✅ PASS (with remediation actions)
+
+> **Audit Process Note**: This document should be reviewed and updated during each security audit.
+> Update the audit date above and add new findings to the audit history section at the end of this document.
 
 ---
 
