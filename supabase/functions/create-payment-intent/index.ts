@@ -44,11 +44,18 @@ serve(async (req) => {
   
   // Reject requests from non-whitelisted origins
   if (!corsHeaders) {
+    const errorCorsHeaders: Record<string, string> = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Content-Type': 'application/json',
+    };
+
     return new Response(
       JSON.stringify({ error: 'Origin not allowed' }),
       {
         status: 403,
-        headers: { 'Content-Type': 'application/json' }
+        headers: errorCorsHeaders,
       }
     );
   }
