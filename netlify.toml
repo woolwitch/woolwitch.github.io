@@ -32,7 +32,11 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     
     # Content Security Policy
-    # Allows self, Supabase, and Stripe for secure operation
+    # Note: 'unsafe-inline' and 'unsafe-eval' are required for:
+    # - Vite's HMR and development tooling
+    # - React's inline styles
+    # - Third-party integrations (Stripe, Google Analytics)
+    # For enhanced security, consider using nonces in production builds
     Content-Security-Policy = """
       default-src 'self';
       script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://www.googletagmanager.com;

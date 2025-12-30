@@ -25,9 +25,10 @@ BEGIN
   WHERE created_at > (now() - interval '1 hour')
     AND user_id IS NULL;
   
-  -- Allow up to 10 anonymous orders per hour globally
-  -- This prevents basic abuse while allowing legitimate guest checkouts
-  IF recent_orders_count >= 10 THEN
+  -- Allow up to 50 anonymous orders per hour globally
+  -- This prevents abuse while allowing legitimate guest checkouts
+  -- Note: For production, consider implementing IP-based rate limiting
+  IF recent_orders_count >= 50 THEN
     RAISE EXCEPTION 'Rate limit exceeded. Please try again later or sign in.';
   END IF;
   
@@ -53,8 +54,10 @@ BEGIN
     RAISE EXCEPTION 'Order total does not match subtotal + delivery';
   END IF;
   
-  -- Prevent unreasonably large orders (> £10,000)
-  IF NEW.total > 10000 THEN
+  -- Prevent unreasonably large orders (> £50,000)
+  -- Note: Adjust this limit based on business requirements
+  -- For higher limits, consider requiring manual approval or authentication
+  IF NEW.total > 50000 THEN
     RAISE EXCEPTION 'Order total exceeds maximum allowed amount';
   END IF;
   
@@ -160,8 +163,11 @@ CREATE TRIGGER log_order_after_insert
 -- ENHANCED STORAGE SECURITY
 -- ========================================
 
--- Add policy to prevent directory traversal in storage
-CREATE POLICY "Prevent storage path manipulation" ON storage.objects
+-- Policies to prevent directory traversal and path manipulation in storage
+-- Note: These policies complement the existing admin-only policies from the initial migration
+
+-- Prevent path manipulation on INSERT
+CREATE POLICY "Prevent storage path manipulation on insert" ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (
     bucket_id = 'woolwitch-images' 
@@ -169,6 +175,20 @@ CREATE POLICY "Prevent storage path manipulation" ON storage.objects
     AND name !~ '^/'    -- Prevent absolute paths
     AND length(name) < 256  -- Reasonable filename length
   );
+
+-- Prevent path manipulation on UPDATE
+CREATE POLICY "Prevent storage path manipulation on update" ON storage.objects
+  FOR UPDATE TO authenticated
+  USING (bucket_id = 'woolwitch-images')
+  WITH CHECK (
+    bucket_id = 'woolwitch-images'
+    AND name !~ '\.\.'  -- Prevent .. in paths
+    AND name !~ '^/'    -- Prevent absolute paths
+    AND length(name) < 256  -- Reasonable filename length
+  );
+
+-- Additional DELETE protection (requires admin via existing policies)
+-- The existing "Admin manage product images" policy handles admin-only deletes
 
 -- ========================================
 -- PERMISSIONS
