@@ -69,6 +69,13 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
   useEffect(() => {
     // Check if PayPal is configured
     if (!isPayPalConfigured()) {
+      // Debug logging for production issues
+      console.error('PayPal Configuration Error:', {
+        PROD: import.meta.env.PROD,
+        hasClientId: !!import.meta.env.VITE_PAYPAL_CLIENT_ID,
+        hasProduction: !!import.meta.env.VITE_PAYPAL_CLIENT_ID_PRODUCTION,
+        hasSandbox: !!import.meta.env.VITE_PAYPAL_CLIENT_ID_SANDBOX,
+      });
       setError('PayPal is not configured. Please contact support.');
       setIsLoading(false);
       return;

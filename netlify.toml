@@ -18,6 +18,7 @@
   # These are Supabase public keys that are SAFE to expose:
   # - VITE_SUPABASE_URL: Public URL for Supabase project
   # - VITE_SUPABASE_ANON_KEY: Anonymous/public key designed for client-side use
+  # - VITE_PAYPAL_CLIENT_ID: Anonymous/public key designed for client-side use
   # 
   # These keys are protected by Supabase Row Level Security (RLS) policies
   # and are intended to be publicly accessible. See:
