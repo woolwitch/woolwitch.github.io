@@ -6,6 +6,9 @@ import type { Product, Order } from '../types/database';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllOrders, updateOrderStatus, getOrderStatistics, formatOrderStatus, getOrderStatusColor } from '../lib/orderService';
 import { compressImage, formatFileSize } from '../lib/imageCompression';
+import { formatCurrency, formatDateShort } from '../utils/format';
+import { getErrorMessage } from '../utils/errors';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 interface ProductFormData {
   name: string;
@@ -176,15 +179,7 @@ export function Admin() {
         reader.readAsDataURL(compressedFile);
       } catch (error) {
         console.error('Error processing image:', error);
-        let userMessage = 'Failed to process image.';
-        if (error instanceof Error) {
-          const msg = error.message || '';
-          if (/format|type|mime|decode/i.test(msg)) {
-            userMessage = 'Image file is corrupted or in an unsupported format.';
-          } else if (/size|large|memory|quota|too big|too large/i.test(msg)) {
-            userMessage = 'Image is too large to compress effectively. Please choose a smaller image.';
-          }
-        }
+        const userMessage = getErrorMessage(error, 'Failed to process image.');
         alert(`${userMessage} If the problem persists, please try another file.`);
       } finally {
         setCompressing(false);
@@ -581,7 +576,7 @@ export function Admin() {
                         <div className="min-w-0 flex-grow">
                           <h3 className="text-sm font-medium text-gray-900 truncate">{product.name}</h3>
                           <p className="text-xs text-gray-500 mb-1">{product.category}</p>
-                          <p className="text-sm font-semibold text-gray-900">£{product.price.toFixed(2)}</p>
+                          <p className="text-sm font-semibold text-gray-900">{formatCurrency(product.price)}</p>
                         </div>
                         <div className="flex space-x-2 ml-2">
                           <button
@@ -665,7 +660,7 @@ export function Admin() {
                         {product.category}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        £{product.price.toFixed(2)}
+                        {formatCurrency(product.price)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {product.stock_quantity}
@@ -721,7 +716,7 @@ export function Admin() {
                 <div className="bg-white rounded-lg shadow p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Total Revenue</h3>
                   <p className="text-3xl font-bold text-green-600">
-                    £{orderStats.totalRevenue.toFixed(2)}
+                    {formatCurrency(orderStats.totalRevenue)}
                   </p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-6">
@@ -750,7 +745,7 @@ export function Admin() {
             {/* Orders Table */}
             {loading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600"></div>
+                <LoadingSpinner />
               </div>
             ) : (
               <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -791,7 +786,7 @@ export function Admin() {
                           <div className="text-sm text-gray-500">{order.email}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          £{order.total.toFixed(2)}
+                          {formatCurrency(order.total)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
                           {order.payment_method === 'paypal' ? 'PayPal' : 'Card'}
@@ -810,7 +805,7 @@ export function Admin() {
                           </select>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.created_at ? new Date(order.created_at).toLocaleDateString() : 'N/A'}
+                          {formatDateShort(order.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button className="text-rose-600 hover:text-rose-900 text-sm">

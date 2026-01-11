@@ -6,6 +6,7 @@ import PaymentMethodSelector, { PaymentMethod } from '../components/PaymentMetho
 import PayPalButton, { PayPalPaymentData } from '../components/PayPalButton';
 import StripeCardPayment from '../components/StripeCardPayment';
 import { createOrder, validateOrderData } from '../lib/orderService';
+import { getErrorMessage } from '../utils/errors';
 import type { OrderAddress, CreateOrderData, StripeDetails } from '../types/database';
 
 interface CheckoutProps {
@@ -119,7 +120,7 @@ export function Checkout({ onNavigate }: CheckoutProps) {
       setIsCompleted(true);
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Payment processing failed';
+      const errorMessage = getErrorMessage(error, 'Payment processing failed');
       setPaymentState(prev => ({ ...prev, error: errorMessage }));
     } finally {
       setPaymentState(prev => ({ ...prev, isProcessing: false }));
@@ -189,7 +190,7 @@ export function Checkout({ onNavigate }: CheckoutProps) {
       setIsCompleted(true);
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Payment processing failed';
+      const errorMessage = getErrorMessage(error, 'Payment processing failed');
       setPaymentState(prev => ({ ...prev, error: errorMessage }));
     } finally {
       setPaymentState(prev => ({ ...prev, isProcessing: false }));

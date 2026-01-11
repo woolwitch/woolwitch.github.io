@@ -1,5 +1,6 @@
 import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
+import { formatCurrency } from '../utils/format';
 
 interface CartProps {
   onNavigate: (page: 'shop' | 'cart' | 'checkout') => void;
@@ -73,11 +74,11 @@ export function Cart({ onNavigate }: CartProps) {
                       </h3>
                       <p className="text-sm text-gray-600 mb-3">{item.product.category}</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        £{item.product.price.toFixed(2)}
+                        {formatCurrency(item.product.price)}
                       </p>
                       {item.product.delivery_charge != null && item.product.delivery_charge > 0 && (
                         <p className="text-sm text-gray-600">
-                          + £{item.product.delivery_charge.toFixed(2)} delivery
+                          + {formatCurrency(item.product.delivery_charge)} delivery
                         </p>
                       )}
                     </div>
@@ -121,7 +122,7 @@ export function Cart({ onNavigate }: CartProps) {
                   <div key={item.product.id} className="flex justify-between text-sm">
                     <span className="text-gray-600">{item.product.name} x {item.quantity}</span>
                     <span className="font-medium text-gray-900">
-                      £{(item.product.price * item.quantity).toFixed(2)}
+                      {formatCurrency(item.product.price * item.quantity)}
                     </span>
                   </div>
                 ))}
@@ -130,18 +131,18 @@ export function Cart({ onNavigate }: CartProps) {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium text-gray-900">£{subtotal.toFixed(2)}</span>
+                  <span className="font-medium text-gray-900">{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Delivery</span>
-                  <span className="font-medium text-gray-900">£{deliveryTotal.toFixed(2)}</span>
+                  <span className="font-medium text-gray-900">{formatCurrency(deliveryTotal)}</span>
                 </div>
               </div>
 
               <div className="border-t border-gray-200 pt-4 mb-6">
                 <div className="flex justify-between">
                   <span className="text-lg font-semibold text-gray-900">Total</span>
-                  <span className="text-2xl font-bold text-rose-600">£{total.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-rose-600">{formatCurrency(total)}</span>
                 </div>
               </div>
 

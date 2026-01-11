@@ -7,6 +7,8 @@ import {
   formatOrderStatus, 
   getOrderStatusColor 
 } from '../lib/orderService';
+import { formatCurrency, formatDate } from '../utils/format';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import type { Order } from '../types/database';
 
 export default function Orders() {
@@ -53,28 +55,10 @@ export default function Orders() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600"></div>
+        <LoadingSpinner />
       </div>
     );
   }
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP'
-    }).format(amount);
-  };
 
   const loadOrderItems = async (orderId: string) => {
     if (orderItems[orderId]) {

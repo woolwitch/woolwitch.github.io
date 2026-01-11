@@ -14,22 +14,18 @@ import Orders from './pages/Orders';
 function App() {
   const [currentPage, setCurrentPage] = useState<'shop' | 'cart' | 'checkout' | 'admin' | 'about' | 'contact' | 'privacy-policy' | 'terms-of-service' | 'orders'>('shop');
 
+  const handleNavigation = (page: 'shop' | 'cart' | 'checkout') => {
+    setCurrentPage(page);
+  };
+
   const renderPage = () => {
-    const handleCartNavigation = (page: 'shop' | 'cart' | 'checkout') => {
-      setCurrentPage(page);
-    };
-
-    const handleCheckoutNavigation = (page: 'shop' | 'cart' | 'checkout') => {
-      setCurrentPage(page);
-    };
-
     switch (currentPage) {
       case 'shop':
         return <Shop />;
       case 'cart':
-        return <Cart onNavigate={handleCartNavigation} />;
+        return <Cart onNavigate={handleNavigation} />;
       case 'checkout':
-        return <Checkout onNavigate={handleCheckoutNavigation} />;
+        return <Checkout onNavigate={handleNavigation} />;
       case 'admin':
         return <Admin />;
       case 'orders':

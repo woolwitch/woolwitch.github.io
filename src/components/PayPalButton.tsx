@@ -8,6 +8,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { getPayPalConfig, isPayPalConfigured, PayPalErrors } from '../lib/paypalConfig';
 import { calculateSubtotal, calculateDeliveryTotal } from '../lib/orderService';
+import { getErrorMessage } from '../utils/errors';
 import type { CartItem, OrderAddress, PayPalDetails } from '../types/database';
 import type { PayPalNamespace, PayPalCaptureResult } from '../vite-env.d.ts';
 
@@ -235,7 +236,7 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
             return orderId;
           } catch (error) {
             console.error('PayPal order creation error:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Failed to create PayPal order';
+            const errorMessage = getErrorMessage(error, 'Failed to create PayPal order');
             onError(errorMessage);
             throw error;
           }
@@ -272,7 +273,7 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
             
           } catch (error) {
             console.error('PayPal payment processing error:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Payment processing failed';
+            const errorMessage = getErrorMessage(error, 'Payment processing failed');
             onError(errorMessage);
           }
         },
@@ -305,7 +306,7 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({
 
     } catch (error) {
       console.error('PayPal button setup error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to setup PayPal button');
+      setError(getErrorMessage(error, 'Failed to setup PayPal button'));
     }
   };  // Re-render button when dependencies change
   useEffect(() => {
