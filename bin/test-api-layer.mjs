@@ -199,7 +199,7 @@ async function testAPISchema() {
   console.log("\n🔧 Testing woolwitch_api schema existence...");
   try {
     // Try to query a system table to check if schema exists
-    const { data, error } = await supabase.rpc('get_categories');
+    const { error } = await supabase.rpc('get_categories');
     
     if (error) {
       // If we get a specific error about schema not existing, that's what we're checking
