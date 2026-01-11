@@ -178,6 +178,7 @@ When migrating from direct table access to API layer:
 - Expose internal implementation details
 - Create functions without proper security checks
 - Forget to grant execute permissions on new functions
+- Create functions without setting explicit search_path (security risk)
 
 ### For Database Changes
 
@@ -200,7 +201,7 @@ All API functions use `SECURITY DEFINER` which means they run with the privilege
 - Centralized security logic
 - Audit logging
 
-**Important:** Every function must check permissions explicitly:
+**Important:** Every function must check permissions explicitly and set search_path:
 
 ```sql
 CREATE OR REPLACE FUNCTION woolwitch_api.admin_operation()
@@ -212,8 +213,17 @@ BEGIN
   
   -- Perform operation
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql 
+   SECURITY DEFINER
+   SET search_path = woolwitch, woolwitch_api, auth, pg_catalog;
 ```
+
+**Search Path Security:** Always set an explicit `search_path` on functions with `SECURITY DEFINER` to prevent search_path hijacking attacks. This ensures functions only access objects from trusted schemas.
+
+Recommended search paths:
+- For woolwitch_api functions: `SET search_path = woolwitch, woolwitch_api, auth, pg_catalog`
+- For woolwitch functions: `SET search_path = woolwitch, auth, pg_catalog`
+- For trigger functions: `SET search_path = woolwitch, pg_catalog`
 
 ### View Security
 
