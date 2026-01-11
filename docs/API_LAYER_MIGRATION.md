@@ -250,6 +250,27 @@ npm run build
 
 ## Troubleshooting
 
+### TypeScript Errors in apiService.ts
+
+If you see TypeScript errors about RPC function names not existing:
+```
+Argument of type '"get_products"' is not assignable to parameter of type '"is_admin"'
+```
+
+This is expected before the migration is applied. The database types in `src/types/database.ts` don't include the new functions yet. After applying the migration:
+
+```bash
+# 1. Apply the migration
+task db:reset
+
+# 2. Generate updated types (if Supabase CLI supports it)
+# Or manually update src/types/database.ts to include the new functions
+
+# 3. The TypeScript errors will resolve
+```
+
+**Note:** The code will work at runtime once the migration is applied, even if TypeScript shows errors during development.
+
 ### "Cannot read properties of undefined"
 
 Make sure you're importing from the correct path:

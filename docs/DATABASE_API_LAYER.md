@@ -269,6 +269,36 @@ SELECT woolwitch_api.create_order(
 );
 ```
 
+## TypeScript Integration
+
+### Type Definitions
+
+After applying the migration, you may need to update `src/types/database.ts` to include the new RPC functions. The current Supabase TypeScript generator may not automatically detect custom functions.
+
+**Temporary Solution:**
+The `apiService.ts` wrapper handles all type conversions and provides proper TypeScript types for the API functions. Use it instead of direct `supabase.rpc()` calls.
+
+**Future Enhancement:**
+Consider using Supabase CLI's type generation after migrations:
+```bash
+# Generate types (when supported)
+supabase gen types typescript --local > src/types/database.ts
+```
+
+### Using API Service
+
+The recommended pattern is to use the typed wrapper functions:
+
+```typescript
+import { getProducts, createOrder } from '@/lib/apiService';
+
+// TypeScript knows the exact return types
+const products: Product[] = await getProducts({ category: 'Crochet' });
+const orderId: string = await createOrder(orderData);
+```
+
+This provides better type safety than direct RPC calls.
+
 ## Future Enhancements
 
 Potential improvements to the API layer:
