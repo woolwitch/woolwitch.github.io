@@ -19,7 +19,18 @@ The `woolwitch_` prefix after the timestamp ensures consistent identification of
 
 ## Schema Overview
 
-The application uses the `woolwitch` schema for namespace isolation and enhanced security.
+The application uses a **two-schema architecture** for separation of concerns:
+
+- **`woolwitch`** - Data layer with internal tables and business logic
+- **`woolwitch_api`** - API layer with exposed functions and views for the UI
+
+**See [DATABASE_API_LAYER.md](DATABASE_API_LAYER.md) for detailed architecture documentation.**
+
+This pattern ensures:
+- Only necessary operations are exposed to the UI
+- Database implementation is abstracted from the client
+- Security is enforced at the API boundary
+- Business logic is centralized in the database
 
 ### Core Tables
 

@@ -210,11 +210,19 @@ task build
 
 ### Database Development
 
+**Important:** Wool Witch uses a two-schema architecture:
+- `woolwitch` - Internal data tables
+- `woolwitch_api` - Exposed API functions and views
+
+**Always use the API layer** from `src/lib/apiService.ts` for data operations. See [DATABASE_API_LAYER.md](docs/DATABASE_API_LAYER.md) for details.
+
 **Create a new migration:**
 
 ```bash
 task db:migration:new -- add_new_feature
 ```
+
+Migration files must follow the naming convention: `YYYYMMDDHHMMSS_woolwitch_description.sql`
 
 **Reset database (fresh start):**
 

@@ -10,7 +10,12 @@ React + TypeScript e-commerce application for handmade crochet goods, built with
 
 **Navigation**: Single-page app using state-based routing in `App.tsx` (`shop | cart | checkout | admin | about | contact`)
 
-**Data Layer**: Supabase client with `woolwitch` schema. Database types in `src/types/database.ts`. All app data lives in `woolwitch` schema, not `public`.
+**Data Layer**: Two-schema architecture:
+- `woolwitch` - Internal data tables and business logic
+- `woolwitch_api` - Exposed API functions and views for UI access
+- Database types in `src/types/database.ts`
+- **IMPORTANT**: Always use API functions from `src/lib/apiService.ts` for data operations, never access tables directly
+- See `docs/DATABASE_API_LAYER.md` for complete API layer documentation
 
 **Authentication Flow**: Email/password + Google OAuth with role-based access control via `user_roles` table. Admin status checked on auth state change, NOT from JWT claims.
 
@@ -44,10 +49,12 @@ npm start     # Auto-creates .env.local, starts dev server
 - Context hooks pattern: `useAuth()`, `useCart()` with error boundaries
 
 **Database Operations**:
-- Row Level Security (RLS) policies protect admin operations
-- Products table has public read, admin-only write policies
-- User roles checked via `user_roles` table join on auth state change
-- All queries use `woolwitch` schema: `supabase.from('products')` → `woolwitch.products`
+- **Use API layer**: All operations go through `src/lib/apiService.ts` functions
+- Tables are in `woolwitch` schema, but accessed via `woolwitch_api` functions
+- Functions enforce security: admin operations check `woolwitch.is_admin()`
+- Views provide read-only access with Row Level Security (RLS)
+- See `docs/DATABASE_API_LAYER.md` for patterns and best practices
+- **Never query tables directly** - use `getProducts()`, `createOrder()`, etc.
 
 **Product Management**:
 - Images stored in Supabase Storage (`product-images` bucket)
@@ -74,7 +81,13 @@ npm start     # Auto-creates .env.local, starts dev server
 
 **Add New Product**: Update database via Admin UI or use `upload-products.mjs` script for batch operations
 
-**Database Changes**: Create migration files in `supabase/migrations/` using the naming convention `YYYYMMDDHHMMSS_woolwitch_description.sql`, update types in `src/types/database.ts`
+**Database Changes**: 
+- Create migration files in `supabase/migrations/` using naming convention `YYYYMMDDHHMMSS_woolwitch_description.sql`
+- Data tables go in `woolwitch` schema
+- API functions/views go in `woolwitch_api` schema
+- Update types in `src/types/database.ts`
+- Update `src/lib/apiService.ts` to expose new operations
+- Document new APIs in `docs/DATABASE_API_LAYER.md`
 
 **Migration Naming**: All migration files must include the `woolwitch_` prefix after the timestamp to maintain consistency and clear project identification
 
